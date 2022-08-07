@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[      4424,        137]
-NotebookOptionsPosition[      3947,        120]
-NotebookOutlinePosition[      4342,        136]
-CellTagsIndexPosition[      4299,        133]
+NotebookDataLength[     18097,        503]
+NotebookOptionsPosition[     16947,        474]
+NotebookOutlinePosition[     17343,        490]
+CellTagsIndexPosition[     17300,        487]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -116,11 +116,365 @@ Cell[BoxData[
   ImageSize->300]], "Output",
  CellLabel->
   "Out[455]=",ExpressionUUID->"0ae4cf8f-e621-481c-b4ca-22b10adbf230"]
-}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Block", "[", 
+  RowBox[{
+   RowBox[{"{", "shadowtext", "}"}], ",", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"shadowtext", "[", 
+      RowBox[{"txt_", ",", "col_", ",", "shift_", ",", "align_"}], "]"}], ":=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Translate", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"Lighter", "[", 
+              RowBox[{"col", ",", "0.4"}], "]"}], ",", "#"}], "}"}], ",", 
+           "shift"}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"col", ",", "#"}], "}"}]}], "}"}], "&"}], "@", 
+      RowBox[{"Text", "[", 
+       RowBox[{
+        RowBox[{"Style", "[", 
+         RowBox[{"txt", ",", 
+          RowBox[{"FontFamily", "->", "\"\<CMU Sans Serif\>\""}], ",", 
+          RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0"}], "}"}], ",", "align"}], "]"}]}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Graphics", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Opacity", "[", "0", "]"}], ",", 
+          RowBox[{"Rectangle", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", 
+              RowBox[{"-", "1"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", "1"}], "}"}]}], "]"}]}], "}"}], ",", 
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Py\>\"", ",", "Blue", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Clifford\>\"", ",", "Red", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ","}], 
+         "\[IndentingNewLine]", "}"}]}], "}"}], ",", 
+      RowBox[{"ImageSize", "->", " ", "300"}], ",", 
+      RowBox[{"AspectRatio", "->", "0.4"}]}], "]"}]}]}], "]"}]], "Input",
+ CellLabel->
+  "In[431]:=",ExpressionUUID->"b57f0c56-d137-4242-8953-59a3e0d79859"],
+
+Cell[BoxData[
+ GraphicsBox[{
+   {Opacity[0], RectangleBox[{-1, -1}, {1, 1}]}, {
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.5152942, 0.632941, 0.8847058], InsetBox[
+         StyleBox["\<\"Py\"\>",
+          StripOnInput->False,
+          FontFamily->"CMU Sans Serif",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.192157, 0.388235, 0.807843], InsetBox[
+        StyleBox["\<\"Py\"\>",
+         StripOnInput->False,
+         FontFamily->"CMU Sans Serif",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}}, {0, 0}], 
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.8743528, 0.5207056, 0.4], InsetBox[
+         StyleBox["\<\"Clifford\"\>",
+          StripOnInput->False,
+          FontFamily->"CMU Sans Serif",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.790588, 0.201176, 0.], InsetBox[
+        StyleBox["\<\"Clifford\"\>",
+         StripOnInput->False,
+         FontFamily->"CMU Sans Serif",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}}, {0, 0}]}},
+  AspectRatio->0.4,
+  ImageSize->300]], "Output",
+ CellLabel->
+  "Out[431]=",ExpressionUUID->"84eb1f9c-fb02-42b3-b5f4-56d04e90f3c4"]
+}, {2}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Block", "[", 
+  RowBox[{
+   RowBox[{"{", "shadowtext", "}"}], ",", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"shadowtext", "[", 
+      RowBox[{"txt_", ",", "col_", ",", "shift_", ",", "align_"}], "]"}], ":=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Translate", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"Lighter", "[", 
+              RowBox[{"col", ",", "0.4"}], "]"}], ",", "#"}], "}"}], ",", 
+           "shift"}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"col", ",", "#"}], "}"}]}], "}"}], "&"}], "@", 
+      RowBox[{"Text", "[", 
+       RowBox[{
+        RowBox[{"Style", "[", 
+         RowBox[{"txt", ",", 
+          RowBox[{"FontFamily", "->", "\"\<Baloo Bhaijaan\>\""}], ",", 
+          RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0"}], "}"}], ",", "align"}], "]"}]}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Graphics", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Opacity", "[", "0", "]"}], ",", 
+          RowBox[{"Rectangle", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", 
+              RowBox[{"-", "1"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", "1"}], "}"}]}], "]"}]}], "}"}], ",", 
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Py\>\"", ",", "Blue", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Clifford\>\"", ",", "Red", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ","}], 
+         "\[IndentingNewLine]", "}"}]}], "}"}], ",", 
+      RowBox[{"ImageSize", "->", " ", "300"}], ",", 
+      RowBox[{"AspectRatio", "->", "0.4"}]}], "]"}]}]}], "]"}]], "Input",
+ CellLabel->
+  "In[435]:=",ExpressionUUID->"ef0789d5-8000-4da4-8027-5f92a76c416a"],
+
+Cell[BoxData[
+ GraphicsBox[{
+   {Opacity[0], RectangleBox[{-1, -1}, {1, 1}]}, {
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.5152942, 0.632941, 0.8847058], InsetBox[
+         StyleBox["\<\"Py\"\>",
+          StripOnInput->False,
+          FontFamily->"Baloo Bhaijaan",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.192157, 0.388235, 0.807843], InsetBox[
+        StyleBox["\<\"Py\"\>",
+         StripOnInput->False,
+         FontFamily->"Baloo Bhaijaan",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}}, {0, 0}], 
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.8743528, 0.5207056, 0.4], InsetBox[
+         StyleBox["\<\"Clifford\"\>",
+          StripOnInput->False,
+          FontFamily->"Baloo Bhaijaan",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.790588, 0.201176, 0.], InsetBox[
+        StyleBox["\<\"Clifford\"\>",
+         StripOnInput->False,
+         FontFamily->"Baloo Bhaijaan",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}}, {0, 0}]}},
+  AspectRatio->0.4,
+  ImageSize->300]], "Output",
+ CellLabel->
+  "Out[435]=",ExpressionUUID->"e2422436-be99-479a-8a79-a8098bf0d5f6"]
+}, {2}]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Block", "[", 
+  RowBox[{
+   RowBox[{"{", "shadowtext", "}"}], ",", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"shadowtext", "[", 
+      RowBox[{"txt_", ",", "col_", ",", "shift_", ",", "align_"}], "]"}], ":=", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Translate", "[", 
+          RowBox[{
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"Lighter", "[", 
+              RowBox[{"col", ",", "0.4"}], "]"}], ",", "#"}], "}"}], ",", 
+           "shift"}], "]"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"col", ",", "#"}], "}"}]}], "}"}], "&"}], "@", 
+      RowBox[{"Text", "[", 
+       RowBox[{
+        RowBox[{"Style", "[", 
+         RowBox[{"txt", ",", 
+          RowBox[{"FontFamily", "->", "\"\<Chalkboard\>\""}], ",", 
+          RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], ",", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "0"}], "}"}], ",", "align"}], "]"}]}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"Graphics", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{
+        RowBox[{"{", 
+         RowBox[{
+          RowBox[{"Opacity", "[", "0", "]"}], ",", 
+          RowBox[{"Rectangle", "[", 
+           RowBox[{
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"-", "1"}], ",", 
+              RowBox[{"-", "1"}]}], "}"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"1", ",", "1"}], "}"}]}], "]"}]}], "}"}], ",", 
+        RowBox[{"{", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Py\>\"", ",", "Blue", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"1", ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ",", 
+          "\[IndentingNewLine]", 
+          RowBox[{"Translate", "[", 
+           RowBox[{
+            RowBox[{"shadowtext", "[", 
+             RowBox[{"\"\<Clifford\>\"", ",", "Red", ",", 
+              RowBox[{"{", 
+               RowBox[{"0.02", ",", "0"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{
+                RowBox[{"-", "1"}], ",", "0"}], "}"}]}], "]"}], ",", 
+            RowBox[{"{", 
+             RowBox[{"0", ",", "0"}], "}"}]}], "]"}], ","}], 
+         "\[IndentingNewLine]", "}"}]}], "}"}], ",", 
+      RowBox[{"ImageSize", "->", " ", "300"}], ",", 
+      RowBox[{"AspectRatio", "->", "0.4"}]}], "]"}]}]}], "]"}]], "Input",
+ CellLabel->
+  "In[433]:=",ExpressionUUID->"eb20e3dc-efa8-4b36-ad66-c3b0022ff5f1"],
+
+Cell[BoxData[
+ GraphicsBox[{
+   {Opacity[0], RectangleBox[{-1, -1}, {1, 1}]}, {
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.5152942, 0.632941, 0.8847058], InsetBox[
+         StyleBox["\<\"Py\"\>",
+          StripOnInput->False,
+          FontFamily->"Chalkboard",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.192157, 0.388235, 0.807843], InsetBox[
+        StyleBox["\<\"Py\"\>",
+         StripOnInput->False,
+         FontFamily->"Chalkboard",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{1, Rational[1, 2]}], ImageScaled[{1, 0.5}]]]}}, {0, 0}], 
+    GeometricTransformationBox[{GeometricTransformationBox[
+       {RGBColor[0.8743528, 0.5207056, 0.4], InsetBox[
+         StyleBox["\<\"Clifford\"\>",
+          StripOnInput->False,
+          FontFamily->"Chalkboard",
+          FontSize->40,
+          FontWeight->Bold], {0, 0}, NCache[
+         ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}, {
+       0.02, 0}], 
+      {RGBColor[0.790588, 0.201176, 0.], InsetBox[
+        StyleBox["\<\"Clifford\"\>",
+         StripOnInput->False,
+         FontFamily->"Chalkboard",
+         FontSize->40,
+         FontWeight->Bold], {0, 0}, NCache[
+        ImageScaled[{0, Rational[1, 2]}], ImageScaled[{0, 0.5}]]]}}, {0, 0}]}},
+  AspectRatio->0.4,
+  ImageSize->300]], "Output",
+ CellLabel->
+  "Out[433]=",ExpressionUUID->"a15e8e57-7318-4964-8599-6585549e0bcc"]
+}, {2}]]
 },
 WindowSize->{808, 645},
 WindowMargins->{{47, Automatic}, {Automatic, 0}},
-FrontEndVersion->"12.3 for Mac OS X x86 (64-bit) (July 9, 2021)",
+FrontEndVersion->"13.1 for Mac OS X ARM (64-bit) (June 16, 2022)",
 StyleDefinitions->"CMU Article.nb",
 ExpressionUUID->"cce494c5-0f60-46c3-a6cc-9903b00757a0"
 ]
@@ -138,10 +492,20 @@ Notebook[{
 Cell[CellGroupData[{
 Cell[580, 22, 2338, 67, 127, "Input",ExpressionUUID->"f00d0547-35ec-46e2-80e2-798c75ac1484"],
 Cell[2921, 91, 1010, 26, 108, "Output",ExpressionUUID->"0ae4cf8f-e621-481c-b4ca-22b10adbf230"]
-}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3968, 122, 2719, 73, 165, "Input",ExpressionUUID->"b57f0c56-d137-4242-8953-59a3e0d79859"],
+Cell[6690, 197, 1584, 38, 136, "Output",ExpressionUUID->"84eb1f9c-fb02-42b3-b5f4-56d04e90f3c4"]
+}, {2}]],
+Cell[CellGroupData[{
+Cell[8308, 240, 2719, 73, 165, "Input",ExpressionUUID->"ef0789d5-8000-4da4-8027-5f92a76c416a"],
+Cell[11030, 315, 1584, 38, 136, "Output",ExpressionUUID->"e2422436-be99-479a-8a79-a8098bf0d5f6"]
+}, {2}]],
+Cell[CellGroupData[{
+Cell[12648, 358, 2715, 73, 165, "Input",ExpressionUUID->"eb20e3dc-efa8-4b36-ad66-c3b0022ff5f1"],
+Cell[15366, 433, 1568, 38, 135, "Output",ExpressionUUID->"a15e8e57-7318-4964-8599-6585549e0bcc"]
+}, {2}]]
 }
 ]
 *)
-
-(* End of internal cache information *)
 
