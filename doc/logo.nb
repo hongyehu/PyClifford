@@ -1,0 +1,147 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4424,        137]
+NotebookOptionsPosition[      3947,        120]
+NotebookOutlinePosition[      4342,        136]
+CellTagsIndexPosition[      4299,        133]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell[BoxData[
+ RowBox[{"Graphics", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"Opacity", "[", "0", "]"}], ",", 
+       RowBox[{"Rectangle", "[", 
+        RowBox[{
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"-", "1"}], ",", 
+           RowBox[{"-", "1"}]}], "}"}], ",", 
+         RowBox[{"{", 
+          RowBox[{"1", ",", "1"}], "}"}]}], "]"}]}], "}"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"Lighter", "[", 
+        RowBox[{"Blue", ",", "0.4"}], "]"}], ",", 
+       RowBox[{"Text", "[", 
+        RowBox[{"Style", "[", 
+         RowBox[{"\"\<Py\>\"", ",", 
+          RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], 
+        "]"}]}], "}"}], ",", "\[IndentingNewLine]", 
+     RowBox[{"Translate", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"Blue", ",", 
+         RowBox[{"Text", "[", 
+          RowBox[{"Style", "[", 
+           RowBox[{"\"\<Py\>\"", ",", 
+            RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], 
+          "]"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"0.018", ",", "0"}], "}"}]}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Translate", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"Lighter", "[", 
+          RowBox[{"Red", ",", "0.4"}], "]"}], ",", 
+         RowBox[{"Text", "[", 
+          RowBox[{"Style", "[", 
+           RowBox[{"\"\<Clifford\>\"", ",", 
+            RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], 
+          "]"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"0.95", ",", "0"}], "}"}]}], "]"}], ",", 
+     "\[IndentingNewLine]", 
+     RowBox[{"Translate", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{"Red", ",", 
+         RowBox[{"Text", "[", 
+          RowBox[{"Style", "[", 
+           RowBox[{"\"\<Clifford\>\"", ",", 
+            RowBox[{"FontSize", "->", " ", "40"}], ",", "Bold"}], "]"}], 
+          "]"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"0.95", "+", "0.022"}], ",", "0"}], "}"}]}], "]"}], ","}], 
+    "\[IndentingNewLine]", "}"}], ",", 
+   RowBox[{"ImageSize", "->", " ", "300"}], ",", 
+   RowBox[{"AspectRatio", "->", "0.4"}]}], "]"}]], "Input",
+ CellLabel->
+  "In[455]:=",ExpressionUUID->"f00d0547-35ec-46e2-80e2-798c75ac1484"],
+
+Cell[BoxData[
+ GraphicsBox[{
+   {Opacity[0], RectangleBox[{-1, -1}, {1, 1}]}, 
+   {RGBColor[0.5152942, 0.632941, 0.8847058], InsetBox[
+     StyleBox["\<\"Py\"\>",
+      StripOnInput->False,
+      FontSize->40,
+      FontWeight->Bold], {0, 0}]}, GeometricTransformationBox[
+    {RGBColor[0.192157, 0.388235, 0.807843], InsetBox[
+      StyleBox["\<\"Py\"\>",
+       StripOnInput->False,
+       FontSize->40,
+       FontWeight->Bold], {0, 0}]}, {0.018, 0}], GeometricTransformationBox[
+    {RGBColor[0.8743528, 0.5207056, 0.4], InsetBox[
+      StyleBox["\<\"Clifford\"\>",
+       StripOnInput->False,
+       FontSize->40,
+       FontWeight->Bold], {0, 0}]}, {0.95, 0}], GeometricTransformationBox[
+    {RGBColor[0.790588, 0.201176, 0.], InsetBox[
+      StyleBox["\<\"Clifford\"\>",
+       StripOnInput->False,
+       FontSize->40,
+       FontWeight->Bold], {0, 0}]}, {0.972, 0}]},
+  AspectRatio->0.4,
+  ImageSize->300]], "Output",
+ CellLabel->
+  "Out[455]=",ExpressionUUID->"0ae4cf8f-e621-481c-b4ca-22b10adbf230"]
+}, Open  ]]
+},
+WindowSize->{808, 645},
+WindowMargins->{{47, Automatic}, {Automatic, 0}},
+FrontEndVersion->"12.3 for Mac OS X x86 (64-bit) (July 9, 2021)",
+StyleDefinitions->"CMU Article.nb",
+ExpressionUUID->"cce494c5-0f60-46c3-a6cc-9903b00757a0"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 2338, 67, 127, "Input",ExpressionUUID->"f00d0547-35ec-46e2-80e2-798c75ac1484"],
+Cell[2921, 91, 1010, 26, 108, "Output",ExpressionUUID->"0ae4cf8f-e621-481c-b4ca-22b10adbf230"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+
