@@ -43,12 +43,10 @@ class Pauli(object):
                     txt += 'Y'
         return txt
 
-    def __getattr__(self, item):
-        if item is 'N': # number of qubits
-            return self.g.shape[0]//2
-        else:
-            return super().__getattribute__(item)
-
+    @property
+    def N(self): # number of qubits
+        return self.g.shape[0]//2
+    
     def __neg__(self):
         return type(self)(self.g, (self.p + 2) % 4)
 
@@ -86,6 +84,15 @@ class Pauli(object):
         else: 
             raise NotImplementedError('matmul is not implemented for between {} and {}'.format(type(self).__name__, type(other).__name__))
 
+    def trace(self):
+        if numpy.sum(self.g) == 0:
+            return 2**self.N
+        else:
+            return 0
+
+    def weight(self):
+        return numpy.sum(numpy.sum(self.g.reshape(self.N, 2), -1) != 0)
+
     def copy(self):
         return Pauli(self.g.copy(), self.p)
 
@@ -96,6 +103,29 @@ class Pauli(object):
     def as_polynomial(self):
         '''cast a Pauli operator to a Pauli polynomial'''
         return self.as_monomial().as_polynomial()
+
+    def as_list(self):
+        '''cast a Pauli operator to a Pauli list'''
+        gs = numpy.expand_dims(self.g, 0)
+        ps = numpy.array([self.p], dtype=numpy.int_)
+        return PauliList(gs, ps)
+
+    def rotate_by(self, generator, mask=None):
+        result = self.as_list().rotate_by(generator, mask=mask)
+        self.g = result.gs[0]
+        self.p = result.ps[0]
+        return self
+
+    def transform_by(self, clifford_map, mask=None):
+        result = self.as_list().transform_by(clifford_map, mask=mask)
+        self.g = result.gs[0]
+        self.p = result.ps[0]
+        return self
+
+    def tokenize(self):
+        gs = numpy.expand_dim(self.g, 0)
+        ps = numpy.array([self.p])
+        return pauli_tokenize(gs, ps)
 
 class PauliList(object):
     '''Represents a list of Pauli operators.
@@ -113,13 +143,13 @@ class PauliList(object):
     def __len__(self):
         return self.L
 
-    def __getattr__(self, item):
-        if item is 'L':
-            return self.gs.shape[0]
-        if item is 'N':
-            return self.gs.shape[1]//2
-        else:
-            return super().__getattribute__(item)
+    @property
+    def L(self):
+        return self.gs.shape[0]
+
+    @property
+    def N(self):
+        return self.gs.shape[1]//2
 
     def __getitem__(self, item):
         if isinstance(item, (int, numpy.integer)):
@@ -143,6 +173,12 @@ class PauliList(object):
             return type(self)(self.gs, (self.ps + 3) % 4)
         else: # upgrade to PauliPolynomial
             raise NotImplementedError('multiplication is not defined for {} when factor is not 1, -1, 1j, -1j.'.format(type(self).__name__))
+
+    def trace(self):
+        return numpy.where(numpy.sum(self.gs, -1) == 0, 2**self.N, 0)
+
+    def weight(self):
+        return numpy.sum(numpy.sum(self.gs.reshape(self.L, self.N, 2), -1) != 0, -1)
 
     def copy(self):
         return PauliList(self.gs.copy(), self.ps.copy())
@@ -240,6 +276,9 @@ class PauliMonomial(Pauli):
         self.c = c
         return self
 
+    def trace(self):
+        return self.c * super(PauliMonomial, self).trace()
+
     def copy(self):
         return PauliMonomial(self.g.copy(), self.p).set_c(self.c)
         
@@ -320,6 +359,9 @@ class PauliPolynomial(PauliList):
         self.cs = cs
         return self
 
+    def trace(self):
+        return self.cs.dot(super(PauliPolynomial, self).trace())
+
     def copy(self):
         return PauliPolynomial(self.gs.copy(), self.ps.copy()).set_cs(self.cs.copy())
 
@@ -365,14 +407,20 @@ def pauli(obj, N = None):
             g[2*(i-h)+1] = 1
         elif mu == 3 or mu == 'Z':
             g[2*(i-h)+1] = 1
-        elif mu == '+':
+        elif mu == 4 or mu == '+':
             p = 0
             h += 1
-        elif mu == '-':
+        elif mu == 5 or mu == '-':
             p = 2
             h += 1
         elif mu == 'i':
             p += 1
+            h += 1
+        elif mu == 6:
+            p = 1
+            h += 1
+        elif mu == 7:
+            p = 3
             h += 1
         else:
             h += 1
@@ -382,15 +430,15 @@ def pauli(obj, N = None):
         return Pauli(g[:-2*h], p)
 
 import types
-def paulis(*objs):
+def paulis(*objs, N = None):
     # short cut if PauliList is passed in
     if len(objs) == 1 :
         if isinstance(objs[0], PauliList):
             return objs[0]
-        if isinstance(objs[0], (tuple, list, set, types.GeneratorType)):
+        if isinstance(objs[0], (tuple, list, set, numpy.ndarray, types.GeneratorType)):
             objs = objs[0]
     # otherwise construct data for Pauli operators
-    objs = [pauli(obj) for obj in objs]
+    objs = [pauli(obj, N = N) for obj in objs]
     gs = numpy.stack([obj.g for obj in objs])
     ps = numpy.array([obj.p for obj in objs])
     return PauliList(gs, ps)

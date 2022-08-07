@@ -1,6 +1,6 @@
 import numpy
 
-class QuantumDevice(object):
+class ClassicalShadow(object):
     def __init__(self, 
                  state,    # base state
                  circuit   # measurement circuit
@@ -11,9 +11,9 @@ class QuantumDevice(object):
         self.N = self.state.N
         
     def __repr__(self):
-        return 'QuantumDevice(\n{},\n{})'.format(self.state, self.circuit).replace('\n','\n  ')
+        return 'ClassicalShadow(\n{},\n{})'.format(self.state, self.circuit).replace('\n','\n  ')
 
-    def measure(self, nsample):
+    def snapshots(self, nsample):
         for povm in self.circuit.povm(nsample):
             snapshot = self.state.copy()
             snapshot.measure(povm)
