@@ -7,4 +7,4 @@ from .circuit import(
     clifford_rotation_gate,
     identity_circuit, brickwall_rcc, onsite_rcc, global_rcc,
     diagonalize, SBRG)
-from .device import ClassicalShadow
+from .device import QuantumDevice
