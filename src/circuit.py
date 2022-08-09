@@ -1,7 +1,7 @@
 import numpy
 from .utils import mask, condense, pauli_diagonalize1
 from .paulialg import Pauli, PauliMonomial, pauli, pauli_zero
-from .stabilizer import (StabilizerState,
+from .stabilizer import (StabilizerState, CliffordMap,
     zero_state, identity_map, clifford_rotation_map, random_clifford_map)
 
 class CliffordGate(object):
@@ -32,6 +32,20 @@ class CliffordGate(object):
         
     def __repr__(self):
         return '[{}]'.format(','.join(str(qubit) for qubit in self.qubits))
+    
+    def set_generator(self, gen):
+        if not isinstance(gen, Pauli):
+            raise TypeError("Rotation generator must be a Pauli string")
+        self.generator = gen
+    def set_forward_map(self,forward_map):
+        if not isinstance(forward_map, CliffordMap):
+            raise TypeError("Forward map must be a instance of CliffordMap")
+        self.forward_map = forward_map
+    def set_backward_map(self,backward_map):
+        if not isinstance(backward_map, CliffordMap):
+            raise TypeError("Backward map must be a instance of CliffordMap")
+        self.backward_map = backward_map
+        
 
     def copy(self):
         gate = CliffordGate(*self.qubits)

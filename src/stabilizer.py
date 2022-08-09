@@ -1,9 +1,10 @@
 import numpy
+import qutip as qt
 from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
     stabilizer_project, stabilizer_measure, stabilizer_expect, 
-    stabilizer_entropy, mask)
+    stabilizer_entropy, mask, stabilizer_projection_trace)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
@@ -84,9 +85,10 @@ class StabilizerState(PauliList):
     gs: int (2*N, 2*N) - strings of Pauli operators in the stabilizer tableau.
     ps: int (2*N) - phase indicators (should only be 0 or 2).
     r:  int  - number of logical qubits (log2 rank of density matrix)'''
-    def __init__(self, *args, **kwargs):
-        super(StabilizerState, self).__init__(*args, **kwargs)
-        self.r = 0 # pure state by default
+    # def __init__(self, *args, **kwargs):
+    def __init__(self, gs, r=0, **kwargs):
+        super(StabilizerState, self).__init__(gs, **kwargs)
+        self.r = r # pure state by default
         
     def __repr__(self):
         ''' will only show active stabilizers, 
@@ -146,16 +148,27 @@ class StabilizerState(PauliList):
         if isinstance(obs, Pauli):
             return self.expect(obs.as_polynomial()) # cast Pauli, PauliMonomial to PauliPolynomial
         elif isinstance(obs, PauliPolynomial):
-            xs = self.expect(PauliList(obs.gs, obs.ps), z=z) # cast PauliPolynomial to PauliList
+            xs = self.expect(PauliList(obs.gs, obs.ps)) # cast PauliPolynomial to PauliList
             return numpy.sum(obs.cs * xs)
         elif isinstance(obs, StabilizerState):
-            xs = self.expect(obs.stabilizers) # extract stabilizers as PauliList
-            return numpy.prod((xs + 1)/2) / 2**obs.r
+            if self.r!=0:
+                raise NotImplementedError("Will be added in the next release!")
+            else:
+                _, _, _, trace = stabilizer_projection_trace(numpy.array(self.gs), numpy.array(self.ps), \
+                                  numpy.array(obs.gs[obs.r:obs.N,:]), numpy.array(obs.ps[obs.r:obs.N]), 0)
+                return trace/2**obs.r
+            
         elif isinstance(obs, PauliList):
             xs = stabilizer_expect(self.gs, self.ps, obs.gs, obs.ps, self.r)
-            if z != 1:
-                xs *= z**obs.weight()
             return xs
+    def to_qutip(self):
+        ID = qt.tensor([qt.qeye(2) for i in range(self.N)])
+        rho = ID
+        for i in range(self.r,self.N):
+            rho = rho*(ID+Pauli(self.gs[i],self.ps[i]).to_qutip())/2
+            # rho = rho*(ID+pauli2pauli(state.gs[i],state.ps[i]))/2
+        rho = rho/(2**self.r)
+        return rho
         
     def entropy(self, subsys):
         '''Entanglement entropy of the stabilizer state in a given region.'''
@@ -180,7 +193,8 @@ class StabilizerState(PauliList):
     # !!! this function has exponential complexity.
     @property
     def density_matrix(self):
-        '''Expand stabilizer state as density matrix in PauliPolynomial representation.'''
+        '''Expand stabilizer state as density matrix in PauliPolynomial representation.
+        '''
         C = binary_repr(numpy.arange(2**(self.N-self.r)))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliPolynomial(gs, ps) / 2**self.N

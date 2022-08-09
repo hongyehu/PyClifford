@@ -612,7 +612,7 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r):
                 p = r
             # as long as gs_obs[k] is not eigen, outcome will be half-to-half
             ps_stb[p] = 2 * numpy.random.randint(2)
-            out[k] = ((ps_stb[p] - ps_obs[k])%4)//2
+            out[k] = ((ps_stb[p] - ps_obs[k])%4)//2 #0->0(+1 eigenvalue), 2->1(-1 eigenvalue)
             log2prob -= 1.
         else: # no update, gs_obs[k] is eigen, result is in pa
             assert((ga == gs_obs[k]).all())
@@ -814,4 +814,75 @@ def aggregate(data_in, inds, l):
     for i in range(data_in.shape[0]):
         data_out[inds[i]] += data_in[i]
     return data_out
+# Aug 8th
+@njit
+def stabilizer_projection_trace(gs_stb, ps_stb, gs_obs, ps_obs, r):
+    '''Measure Pauli operators on a stabilizer state.
 
+    Parameters:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    gs_obs: int (L, 2*N) - strings of Pauli operators to be measured.
+    ps_obs: int (L) - phase indicators of Pauli operators to be measured.
+    r: int - log2 rank of density matrix (num of standby stablizers).
+
+    Returns:
+    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    r: int - updated log2 rank of density matrix.
+    trace: float - Tr(P * rho1 * P*)'''
+    (L, Ng) = gs_obs.shape
+    N = Ng//2
+#     assert L==N # Current implementation is full state projection
+    assert 0<=r<=N
+    ga = numpy.empty(2*N, dtype=numpy.int_) # workspace for stabilizer accumulation
+    pa = 0 # workspace for phase accumulation
+    trace = 1
+    for k in range(L): # for each observable gs_obs[k]
+        update = False
+        extend = False
+        p = 0 # pointer
+        ga[:] = 0
+        pa = 0
+        for j in range(2*N):
+            if acq(gs_stb[j], gs_obs[k]): # find gs_stb[j] anticommute with gs_obs[k]
+                if update: # if gs_stb[j] is not the first anticommuting operator
+                    # update gs_stb[j] to commute with gs_obs[k]
+                    if j < N: # if gs_stb[j] is a stablizer, phase matters
+                        ps_stb[j] = (ps_stb[j] + ps_stb[p] + ipow(gs_stb[j], gs_stb[p]))%4
+                    gs_stb[j] = (gs_stb[j] + gs_stb[p])%2
+                else: # if gs_stb[j] is the first anticommuting operator
+                    if j < N + r: # if gs_stb[j] is not an active destabilizer
+                        p = j # move pointer to j
+                        update = True
+                        if not r <= j < N: # if gs_stb[j] is a standby operator
+                            extend = True
+                    else: # gs_stb[j] anticommute with destabilizer, meaning gs_obs[k] already a combination of active stabilizers
+                        # collect corresponding stabilizer component to ga
+                        pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
+                        ga = (ga + gs_stb[j-N])%2
+        if update:
+            # now gs_stb[p] and gs_obs[k] anticommute
+            q = (p+N)%(2*N) # get q as dual of p 
+            gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
+            gs_stb[p] = gs_obs[k] # add gs_obs[k] to gs_stb[p]
+            if extend:
+                r -= 1 # rank will reduce under extension
+                # bring new stabilizer from p to r
+                if p == r:
+                    pass
+                elif q == r:
+                    gs_stb[numpy.array([p,q])] = gs_stb[numpy.array([q,p])] # swap p,q
+                else:
+                    s = (r+N)%(2*N) # get s as dual of r
+                    gs_stb[numpy.array([p,r])] = gs_stb[numpy.array([r,p])] # swap p,r
+                    gs_stb[numpy.array([q,s])] = gs_stb[numpy.array([s,q])] # swap q,s
+                p = r
+            # the projection will change phase of stabilizer
+            ps_stb[p] = ps_obs[k]
+            trace = trace/2.
+        else: # no update, gs_obs[k] is eigen, result is in pa
+            assert((ga == gs_obs[k]).all())
+            if not pa == ps_obs[k]:
+                trace = 0.
+    return gs_stb, ps_stb, r, trace
