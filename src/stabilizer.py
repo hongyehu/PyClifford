@@ -131,7 +131,7 @@ class StabilizerState(PauliList):
             self.gs, self.ps, obs.gs, obs.ps, self.r)
         return out, log2prob
 
-    def expect(self, obs, z=1):
+    def expect(self, obs):
         '''Evaluate expectation values of observables on the statilizer state.
         
         Parameters:
@@ -189,6 +189,15 @@ class StabilizerState(PauliList):
         C = numpy.random.randint(2, size=(L,self.N-self.r))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
+    def get_prob(self, readout):
+        '''
+        Evaluate the probability of getting a bit string readout
+        '''
+        if self.N != readout.shape[0]:
+            raise Error("readout is incompitile with system size!")
+        readout_state = identity_map(self.N).to_state()
+        readout_state.ps[:self.N]=readout
+        return self.expect(readout_state)
 
     # !!! this function has exponential complexity.
     @property
