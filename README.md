@@ -12,6 +12,8 @@ This is a `python` based clifford circuit simulation package which not only offe
 ## Dependence of `PyClifford`:
 - Numba
 - Numpy
+- QuTip
+- Matplotlib
 
 One can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
 
