@@ -15,7 +15,7 @@ This is a `python` based clifford circuit simulation package which not only offe
 - QuTip
 - Matplotlib
 
-One can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
+*For MacOS user:* you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
 
 
 
