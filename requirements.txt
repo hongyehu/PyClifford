@@ -1,0 +1,6 @@
+# Dev environment
+python==3.10.4
+numpy==1.21.5
+matplotlib==3.5.2
+qutip==4.6.3
+numba==0.55.1
