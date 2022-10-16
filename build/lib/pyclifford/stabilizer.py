@@ -1,9 +1,11 @@
 import numpy
+import qutip as qt
 from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
-    stabilizer_project, stabilizer_measure, stabilizer_expect, stabilizer_entropy, pauli_operation)
-from .paulialg import PauliList, pauli, paulis
+    stabilizer_project, stabilizer_measure, stabilizer_expect, 
+    stabilizer_entropy, mask, stabilizer_projection_trace)
+from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
     '''Represents a Clifford map. This is a subclass of PauliList.
@@ -83,25 +85,24 @@ class StabilizerState(PauliList):
     gs: int (2*N, 2*N) - strings of Pauli operators in the stabilizer tableau.
     ps: int (2*N) - phase indicators (should only be 0 or 2).
     r:  int  - number of logical qubits (log2 rank of density matrix)'''
-    def __init__(self, *args, **kwargs):
-        super(StabilizerState, self).__init__(*args, **kwargs)
-        self.r = 0 # pure state by default
+    # def __init__(self, *args, **kwargs):
+    def __init__(self, gs, r=0, **kwargs):
+        super(StabilizerState, self).__init__(gs, **kwargs)
+        self.r = r # pure state by default
         
     def __repr__(self):
         ''' will only show active stabilizers, 
             to see the full stabilizer tableau, convert to PauliList by [:] '''
         subrepr = repr(self.stabilizers)
-        if subrepr is '':
+        if subrepr == '':
             return 'StabilizerState()'
         else:
             return 'StabilizerState(\n{})'.format(subrepr).replace('\n','\n  ')
 
-    def __getattribute__(self, item):
-        if item is 'stabilizers':
-            return self[self.r:self.N]
-        else:
-            return super().__getattribute__(item)
-
+    @property
+    def stabilizers(self):
+        return self[self.r:self.N]
+    
     def copy(self):
         return StabilizerState(self.gs.copy(), self.ps.copy()).set_r(self.r)
 
@@ -134,18 +135,51 @@ class StabilizerState(PauliList):
         '''Evaluate expectation values of observables on the statilizer state.
         
         Parameters:
-        obs: PauliList or StabilizerState (only active stabilizers evaluated)
+        obs: observable, can be Pauli, PauliList, PauliPolynomial, StabilizerState
+        z: fugacity of operator weight, it is not used when obs is StabilizerState
 
         Returns:
-        exp: expectation values.'''
-        if isinstance(obs, StabilizerState):
-            obs = obs.stabilizers
-        xs = stabilizer_expect(self.gs, self.ps, obs.gs, obs.ps, self.r)
-        return xs
-
-    def entropy(self, mask):
+        out: output (depending on the type of obs)
+            * Pauli: promote to PauliPolynomial
+            * PauliPolynomial O: Tr(rho O z^|O|)
+            * StabilizerState sigma: Tr(rho sigma)
+            * PauliList [O_i]: [Tr(rho O_i z^|O_i|)]
+        '''
+        if isinstance(obs, Pauli):
+            return self.expect(obs.as_polynomial()) # cast Pauli to PauliPolynomial
+        elif isinstance(obs, PauliPolynomial):
+            xs = self.expect(PauliList(obs.gs, obs.ps)) # cast PauliPolynomial to PauliList
+            return numpy.sum(obs.cs * xs)
+        elif isinstance(obs, StabilizerState):
+            if self.r!=0:
+                raise NotImplementedError("Will be added in the next release!")
+            else:
+                _, _, _, trace = stabilizer_projection_trace(numpy.array(self.gs), numpy.array(self.ps), \
+                                  numpy.array(obs.gs[obs.r:obs.N,:]), numpy.array(obs.ps[obs.r:obs.N]), 0)
+                return trace/2**obs.r
+            
+        elif isinstance(obs, PauliList):
+            xs = stabilizer_expect(self.gs, self.ps, obs.gs, obs.ps, self.r)
+            return xs
+    def to_qutip(self):
+        ID = qt.tensor([qt.qeye(2) for i in range(self.N)])
+        rho = ID
+        for i in range(self.r,self.N):
+            rho = rho*(ID+Pauli(self.gs[i],self.ps[i]).to_qutip())/2
+            # rho = rho*(ID+pauli2pauli(state.gs[i],state.ps[i]))/2
+        rho = rho/(2**self.r)
+        return rho
+        
+    def entropy(self, subsys):
         '''Entanglement entropy of the stabilizer state in a given region.'''
-        return stabilizer_entropy(self.stabilizers.gs, mask)
+        if isinstance(subsys, (tuple, list)):
+            subsys = numpy.array(subsys)
+        if len(subsys) == 0:
+            return 0
+        else:
+            if not isinstance(subsys[0], numpy.bool_):
+                subsys = mask(subsys, self.N)
+        return stabilizer_entropy(self.stabilizers.gs, subsys)
 
     def tokenize(self):
         return self.stabilizers.tokenize()
@@ -155,13 +189,45 @@ class StabilizerState(PauliList):
         C = numpy.random.randint(2, size=(L,self.N-self.r))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
+    def get_prob(self, readout):
+        '''
+        Evaluate the probability of getting a bit string readout
+        '''
+        if self.N != readout.shape[0]:
+            raise Error("readout is incompitile with system size!")
+        readout_state = identity_map(self.N).to_state()
+        readout_state.ps[:self.N]=readout
+        return self.expect(readout_state)
 
     # !!! this function has exponential complexity.
-    def stabilizer_group(self):
-        '''Enumerate all stabilizers in the stabilizer group.'''
+    @property
+    def density_matrix(self):
+        '''Expand stabilizer state as density matrix in PauliPolynomial representation.
+        '''
         C = binary_repr(numpy.arange(2**(self.N-self.r)))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
-        return PauliList(gs, ps)
+        return PauliPolynomial(gs, ps) / 2**self.N
+
+    def __neg__(self):
+        return -self.density_matrix
+
+    def __rmul__(self, other):
+        return other * self.density_matrix
+
+    def __truediv__(self, other):
+        return self.density_matrix/other
+
+    def __add__(self, other):
+        return self.density_matrix + other
+
+    def __radd__(self, other):
+        return self.density_matrix + other
+
+    def __sub__(self, other):
+        return self.density_matrix - other
+
+    def __matmul__(self, other):
+        return self.density_matrix @ other
 
 # ---- map constructors ----
 def identity_map(N):
@@ -182,8 +248,6 @@ def random_clifford_map(N):
     ps = 2 * numpy.random.randint(0,2,2*N) # shape (2*N), phase indicator
     return CliffordMap(gs, ps)
 
-
-
 def clifford_rotation_map(gen):
     '''construct Clifford map from generator.'''
     gen = pauli(gen)
@@ -203,8 +267,8 @@ def stabilizer_state(*stabilizers):
     if not (acq_mat(stabilizers.gs) == 0).all():
         raise ValueError('stabilizers must all commute with each other.')
     state = maximally_mixed_state(stabilizers.N)
-    state.gs, state.r = stabilizer_project(state.gs, stabilizers.gs, state.r)
-    state.ps[state.r:state.N] = numpy.flip(stabilizers.ps)
+    state.gs, state.r = stabilizer_project(state.gs, numpy.flipud(stabilizers.gs), state.r)
+    state.ps[state.r:state.N] = stabilizers.ps
     return state
 
 def maximally_mixed_state(N):

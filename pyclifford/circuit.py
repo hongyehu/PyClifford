@@ -1,6 +1,6 @@
 import numpy
 from .utils import mask, condense, pauli_diagonalize1
-from .paulialg import Pauli, PauliMonomial, pauli, pauli_zero
+from .paulialg import Pauli, pauli, pauli_zero
 from .stabilizer import (StabilizerState, CliffordMap,
     zero_state, identity_map, clifford_rotation_map, random_clifford_map)
 
@@ -386,7 +386,7 @@ def diagonalize(obj, i0 = 0, causal=False):
     Returns:
     circ: CliffordCircuit - circuit that diagonalizes obj.'''
     circ = identity_circuit(obj.N)
-    if isinstance(obj, (Pauli, PauliMonomial)):
+    if isinstance(obj, (Pauli)):
         if causal:
             for g in pauli_diagonalize1(obj.g[2*i0:]):
                 circ.take(clifford_rotation_gate(Pauli(g), numpy.arange(i0,obj.N)))
