@@ -135,18 +135,18 @@ class StabilizerState(PauliList):
         '''Evaluate expectation values of observables on the statilizer state.
         
         Parameters:
-        obs: observable, can be Pauli, PauliList, PauliMonomial, PauliPolynomial, StabilizerState
+        obs: observable, can be Pauli, PauliList, PauliPolynomial, StabilizerState
         z: fugacity of operator weight, it is not used when obs is StabilizerState
 
         Returns:
         out: output (depending on the type of obs)
-            * Paili, PauliMonomial: promote to PauliPolynomial
+            * Pauli: promote to PauliPolynomial
             * PauliPolynomial O: Tr(rho O z^|O|)
             * StabilizerState sigma: Tr(rho sigma)
             * PauliList [O_i]: [Tr(rho O_i z^|O_i|)]
         '''
         if isinstance(obs, Pauli):
-            return self.expect(obs.as_polynomial()) # cast Pauli, PauliMonomial to PauliPolynomial
+            return self.expect(obs.as_polynomial()) # cast Pauli to PauliPolynomial
         elif isinstance(obs, PauliPolynomial):
             xs = self.expect(PauliList(obs.gs, obs.ps)) # cast PauliPolynomial to PauliList
             return numpy.sum(obs.cs * xs)

@@ -1,7 +1,7 @@
 import numpy
 from .utils import mask, condense, pauli_diagonalize1
-from .paulialg import Pauli, PauliMonomial, pauli_zero
-from .stabilizer import (StabilizerState,
+from .paulialg import Pauli, pauli, pauli_zero
+from .stabilizer import (StabilizerState, CliffordMap,
     zero_state, identity_map, clifford_rotation_map, random_clifford_map)
 
 class CliffordGate(object):
@@ -32,6 +32,20 @@ class CliffordGate(object):
         
     def __repr__(self):
         return '[{}]'.format(','.join(str(qubit) for qubit in self.qubits))
+    
+    def set_generator(self, gen):
+        if not isinstance(gen, Pauli):
+            raise TypeError("Rotation generator must be a Pauli string")
+        self.generator = gen
+    def set_forward_map(self,forward_map):
+        if not isinstance(forward_map, CliffordMap):
+            raise TypeError("Forward map must be a instance of CliffordMap")
+        self.forward_map = forward_map
+    def set_backward_map(self,backward_map):
+        if not isinstance(backward_map, CliffordMap):
+            raise TypeError("Backward map must be a instance of CliffordMap")
+        self.backward_map = backward_map
+        
 
     def copy(self):
         gate = CliffordGate(*self.qubits)
@@ -43,7 +57,7 @@ class CliffordGate(object):
             gate.backward_map = self.backward_map.copy()
         return gate
     
-    def commute_with(self, other_gate):
+    def independent_from(self, other_gate):
         return len(set(self.qubits) & set(other_gate.qubits))==0
 
     def forward(self, obj):
@@ -129,16 +143,16 @@ class CliffordLayer(object):
             layer.backward_map = self.backward_map.copy()
         return layer
     
-    def commute_with(self, other_gate):
-        return all(gate.commute_with(other_gate) for gate in self.gates)
+    def independent_from(self, other_gate):
+        return all(gate.independent_from(other_gate) for gate in self.gates)
     
     def take(self, gate):
         if self.prev_layer is None: # if I have no previous layer
             self.gates.append(gate) # I will take the gate
         else: # if I have a previous layer, check it
-            if self.prev_layer.commute_with(gate): # if commute
+            if self.prev_layer.independent_from(gate): # if independent (not overlapping)
                 self.prev_layer.take(gate) # previous layer take the gate
-            else: # if not commute
+            else: # if not independent
                 self.gates.append(gate) # I will have to keep the gate
 
     def forward(self, obj):
@@ -186,10 +200,10 @@ class CliffordCircuit(object):
         
     def __repr__(self):
         layout = '\n'.join(repr(layer) for layer in self.layers_backward())
-        return 'QuantumCircuit(\n{})'.format(layout).replace('\n','\n  ')
+        return 'CliffordCircuit(\n{})'.format(layout).replace('\n','\n  ')
 
     def __getattr__(self, item):
-        if item is 'N': # if self.N not defined
+        if item == 'N': # if self.N not defined
             # infer from gates (assuming last qubit is covered)
             N = 0
             for layer in self.layers_forward():
@@ -231,7 +245,7 @@ class CliffordCircuit(object):
             layer = layer.next_layer
 
     def take(self, gate):
-        if self.last_layer.commute_with(gate): # if last layer commute with the new gate
+        if self.last_layer.independent_from(gate): # if last layer commute with the new gate
             self.last_layer.take(gate) # the last layer takes the gate
         else: # otherwise create a new layer to handle this
             new_layer = CliffordLayer(gate) # a new layer with the new gate
@@ -292,8 +306,8 @@ class CliffordCircuit(object):
         '''Assuming computational basis measurement follows the circuit, this
         will back evolve the computational basis state to generate prior POVM.
         This returns a generator.'''
-        zero = zero_state(self.N)
         for _ in range(nsample):
+            zero = zero_state(self.N)
             yield self.backward(zero)
 
 # ---- gate constructors ----
@@ -303,6 +317,7 @@ def clifford_rotation_gate(generator, qubits=None):
     Parameters:
     generator: Pauli - Pauli operator that generates the rotation.
         U = exp( i pi/4 g) = (1 + i g)/sqrt(2)'''
+    generator = pauli(generator)
     g_cond, qubits_cond = condense(generator.g) # extract generator support
     if qubits is None:
         qubits = qubits_cond
@@ -313,13 +328,14 @@ def clifford_rotation_gate(generator, qubits=None):
     return gate
 
 # ---- circuit constructors ----
-def identity_circuit(N):
+def identity_circuit(N = None):
     '''Construct a identity Clifford circuit containing no gate.
 
     Parameters:
     N: int - number of qubits.'''
     circ = CliffordCircuit()
-    circ.N = N  # fix number of qubits explicitly
+    if N is not None:
+        circ.N = N  # fix number of qubits explicitly
     return circ
 
 def brickwall_rcc(N, depth):
@@ -357,20 +373,21 @@ def global_rcc(N):
     return circ
 
 # ---- diagonalization ----
-def diagonalize(obj, i0 = 0, afterward=False):
+def diagonalize(obj, i0 = 0, causal=False):
     '''Diagonalize a Pauli operator or a stabilizer state (density matrix).
 
     Parameters:
     obj: Pauli - the operator to be diagonalized, or
          StabilizerState - the state to be diagonalized.
     i0: int - index of the qubit to diagonalize to.
-    afterward: bool - whether to focus only on qubits i0-afterward.
+    causal: bool - whether to preserve the causal structure by restricting 
+                   the action of Clifford transformation to the qubits at i0 and afterwards.
 
     Returns:
     circ: CliffordCircuit - circuit that diagonalizes obj.'''
     circ = identity_circuit(obj.N)
-    if isinstance(obj, (Pauli, PauliMonomial)):
-        if afterward:
+    if isinstance(obj, (Pauli)):
+        if causal:
             for g in pauli_diagonalize1(obj.g[2*i0:]):
                 circ.take(clifford_rotation_gate(Pauli(g), numpy.arange(i0,obj.N)))
         else:
@@ -402,7 +419,7 @@ def SBRG(hmdl, max_rate=2., tol=1.e-8):
     for i0 in range(N): # pivot through every qubit
         leading = numpy.argmax(numpy.abs(htmp.cs)) # get leading term index
         # find circuit to diagonalize leading term to i0
-        circ_i0 = diagonalize(htmp[leading], i0, afterward=True) 
+        circ_i0 = diagonalize(htmp[leading], i0, causal=True) 
         circ.compose(circ_i0) # append it to total circuit
         circ_i0.forward(htmp) # apply it to Hamiltonian
         mask_commute = htmp.gs[:,2*i0] == 0 # mask diagonal terms
