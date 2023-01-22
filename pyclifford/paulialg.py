@@ -304,11 +304,11 @@ class PauliPolynomial(PauliList):
 
     def __add__(self, other):
         if not isinstance(other, PauliPolynomial):
-            #if isinstance(other, (PauliMonomial, Pauli, PauliList)):
-            #    other = other.as_polynomial()
-            #else: # otherwise assuming other is a number
-            #    other = other * pauli_identity(self.N)
-            other = other * pauli_identity(self.N)
+            if isinstance(other, (Pauli, PauliList)):
+                other = other.as_polynomial()
+            else: # otherwise assuming other is a number
+                other = other * pauli_identity(self.N)
+            # other = other * pauli_identity(self.N)
         gs = numpy.concatenate([self.gs, other.gs])
         ps = numpy.concatenate([self.ps, other.ps])
         cs = numpy.concatenate([self.cs, other.cs])
