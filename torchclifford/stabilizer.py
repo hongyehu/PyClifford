@@ -1,3 +1,4 @@
+import torch
 import numpy
 import qutip as qt
 from .utils import (
@@ -18,7 +19,6 @@ class CliffordMap(PauliList):
     Z1 -> U Z1 U^dagger = Pauli[g3,p3]
     ....
     The operators [g0,g1,g2,g3,...] forms a PauliList.
-
     Parameters:
     gs: int (2*N, 2*N) - strings of Pauli operators to be mapped to.
     ps: int (2*N) - phase indicators of Pauli operators to be mapped to.'''
@@ -38,7 +38,7 @@ class CliffordMap(PauliList):
             return 'CliffordMap(\n{}\n   ...\n{})'.format('\n'.join(lns1),'\n'.join(lns2)).replace('\n','\n  ')
     
     def copy(self):
-        return CliffordMap(self.gs.copy(), self.ps.copy())
+        return CliffordMap(self.gs.clone(), self.ps.clone())
 
     def to_state(self, r=None):
         '''Interprete the Clifford map as a stabilizer state, such that the
@@ -63,7 +63,7 @@ class CliffordMap(PauliList):
     def inverse(self):
         '''Returns the inverse of this Clifford map, (such that it composes with
         its inverse results in identity map).'''
-        gs_inv = z2inv(self.gs)
+        gs_inv = z2inv(self.gs.cpu().numpy()).to(self.gs.device)
         gs_iden, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
         ps_inv = (- ps_mis - ps0(gs_inv))%4
         return CliffordMap(gs_inv, ps_inv)
@@ -71,7 +71,6 @@ class CliffordMap(PauliList):
 class StabilizerState(PauliList):
     '''Represents a stabilizer state. This is a subclass of PauliList.
         rho = 1/2^r prod_{a=1}^{N-r} (1+ Pauli[g_a,p_a])/2
-
     The stabilizer state is specified by a stablizer tableau, as a binary matrix
     of the shape (2*N, 2*N).
         rows [0,r) - standby stabilizers
@@ -80,7 +79,6 @@ class StabilizerState(PauliList):
         rows [N+r,2*N) - active destabilizers
     The stabilizers and destablizers in the tableau forms a list of Pauli 
     operators, which can be represented as a subclass of PauliList.
-
     Parameters:
     gs: int (2*N, 2*N) - strings of Pauli operators in the stabilizer tableau.
     ps: int (2*N) - phase indicators (should only be 0 or 2).
@@ -104,7 +102,7 @@ class StabilizerState(PauliList):
         return self[self.r:self.N]
     
     def copy(self):
-        return StabilizerState(self.gs.copy(), self.ps.copy()).set_r(self.r)
+        return StabilizerState(self.gs.clone(), self.ps.clone()).set_r(self.r)
 
     def set_r(self, r=None):
         '''set log2 rank of the density matrix.'''
@@ -121,7 +119,6 @@ class StabilizerState(PauliList):
         
         Parameters:
         obs: PauliList or StabilizerState (only active stabilizers measured)
-
         Returns:
         out: int (L) - array of measurement outcomes of each observable.
         log2prob: real - log2 probability of this set of outcomes.'''
@@ -137,7 +134,6 @@ class StabilizerState(PauliList):
         Parameters:
         obs: observable, can be Pauli, PauliList, PauliPolynomial, StabilizerState
         z: fugacity of operator weight, it is not used when obs is StabilizerState
-
         Returns:
         out: output (depending on the type of obs)
             * Pauli: promote to PauliPolynomial
@@ -149,18 +145,19 @@ class StabilizerState(PauliList):
             return self.expect(obs.as_polynomial()) # cast Pauli to PauliPolynomial
         elif isinstance(obs, PauliPolynomial):
             xs = self.expect(PauliList(obs.gs, obs.ps)) # cast PauliPolynomial to PauliList
-            return numpy.sum(obs.cs * xs)
+            return torch.sum(obs.cs * xs)
         elif isinstance(obs, StabilizerState):
             if self.r!=0:
                 raise NotImplementedError("Will be added in the next release!")
             else:
-                _, _, _, trace = stabilizer_projection_trace(numpy.array(self.gs), numpy.array(self.ps), \
-                                  numpy.array(obs.gs[obs.r:obs.N,:]), numpy.array(obs.ps[obs.r:obs.N]), 0)
+                _, _, _, trace = stabilizer_projection_trace(self.gs.detach().clone(), self.ps.detach().clone(), \
+                                  obs.gs.detach().clone()[obs.r:obs.N,:], obs.ps.detach().clone()[obs.r:obs.N], 0)
                 return trace/2**obs.r
             
         elif isinstance(obs, PauliList):
             xs = stabilizer_expect(self.gs, self.ps, obs.gs, obs.ps, self.r)
             return xs
+
     def to_qutip(self):
         ID = qt.tensor([qt.qeye(2) for i in range(self.N)])
         rho = ID
@@ -186,7 +183,7 @@ class StabilizerState(PauliList):
     
     def sample(self, L):
         '''Sample stabilizers from the stabilizer group.'''
-        C = numpy.random.randint(2, size=(L,self.N-self.r))
+        C = torch.randint(0, 2, (L,self.N-self.r), device=self.gs.device)
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
 
@@ -205,7 +202,7 @@ class StabilizerState(PauliList):
     def density_matrix(self):
         '''Expand stabilizer state as density matrix in PauliPolynomial representation.
         '''
-        C = binary_repr(numpy.arange(2**(self.N-self.r)))
+        C = binary_repr(torch.arange(2**(self.N-self.r)))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliPolynomial(gs, ps) / 2**self.N
 
@@ -231,64 +228,63 @@ class StabilizerState(PauliList):
         return self.density_matrix @ other
 
 # ---- map constructors ----
-def identity_map(N):
+def identity_map(N, device='cpu'):
     '''construct identity Clifford map of N qubits.'''
-    gs = numpy.eye(2*N, dtype=numpy.int_)
+    gs = torch.eye(2*N, device=device, dtype=torch.float32)
     return CliffordMap(gs)
 
-def random_pauli_map(N):
+def random_pauli_map(N, device='cpu'):
     '''construct random Pauli map of N qubits.'''
-    gs = random_pauli(N) # shape (2*N, 2*N), mapping matrix
-    ps = 2 * numpy.random.randint(0,2,2*N) # shape (2*N), phase indicator
+    gs = random_pauli(N, device=device) # shape (2*N, 2*N), mapping matrix
+    ps = 2 * torch.randint(0, 2, (2*N,), device=device).to(torch.float32) # shape (2*N), phase indicator
     return CliffordMap(gs, ps)
 
-def random_clifford_map(N):
+def random_clifford_map(N, device='cpu'):
     '''construct random Clifford map of N qubits.
         drawn from N-qubit Clifford group uniformly.'''
-    gs = random_clifford(N) # shape (2*N, 2*N), mapping matrix
-    ps = 2 * numpy.random.randint(0,2,2*N) # shape (2*N), phase indicator
+    gs = random_clifford(N, device=device) # shape (2*N, 2*N), mapping matrix
+    ps = 2 * torch.randint(0, 2, (2*N,), device=device).to(torch.float32) # shape (2*N), phase indicator
     return CliffordMap(gs, ps)
 
-def clifford_rotation_map(gen):
+def clifford_rotation_map(gen, device='cpu'):
     '''construct Clifford map from generator.'''
-    gen = pauli(gen)
-    gs = numpy.eye(2*gen.N, dtype=numpy.int_) # initialize
-    ps = numpy.zeros(2*gen.N, dtype=numpy.int_) # initialize
+    gen = pauli(gen, device=device)
+    gs = torch.eye(2*gen.N, device=gen.g.device, dtype=torch.float32) # initialize
+    ps = torch.zeros(2*gen.N, device=gen.g.device, dtype=torch.float32) # initialize
     gs, ps = clifford_rotate(gen.g, gen.p, gs, ps)
     return CliffordMap(gs, ps)
 
 # ---- state constructors ----
 def stabilizer_state(*stabilizers):
     '''Construct a stabilizer state from a list of stabilizers
-
     Parameters:
     stabilizers: PauliList or descriptions of stabilizers.'''
-    stabilizers = paulis(*stabilizers) # parsing input to PauliList
+    device = stabilizers[0].gs.device
+    stabilizers = paulis(*stabilizers, device=device) # parsing input to PauliList
     # validity check:
     if not (acq_mat(stabilizers.gs) == 0).all():
         raise ValueError('stabilizers must all commute with each other.')
-    state = maximally_mixed_state(stabilizers.N)
-    state.gs, state.r = stabilizer_project(state.gs, numpy.flipud(stabilizers.gs), state.r)
+    state = maximally_mixed_state(stabilizers.N, device=device)
+    state.gs, state.r = stabilizer_project(state.gs, torch.flipud(stabilizers.gs), state.r)
     state.ps[state.r:state.N] = stabilizers.ps
     return state
 
-def maximally_mixed_state(N):
-    return identity_map(N).to_state(r=N)
+def maximally_mixed_state(N, device='cpu'):
+    return identity_map(N, device=device).to_state(r=N)
 
-def zero_state(N):
-    return identity_map(N).to_state()
+def zero_state(N, device='cpu'):
+    return identity_map(N, device=device).to_state()
 
-def one_state(N):
-    return -zero_state(N)
+def one_state(N, device='cpu'):
+    return -zero_state(N, device=device)
 
-def ghz_state(N):
-    objs = [pauli({i:3,i+1:3},N) for i in range(N-1)]
-    objs.append(pauli([1]*N))
-    return stabilizer_state(paulis(objs))
+def ghz_state(N, device='cpu'):
+    objs = [pauli({i:3,i+1:3}, N, device=device) for i in range(N-1)]
+    objs.append(pauli([1]*N, device=device))
+    return stabilizer_state(paulis(objs, device=device))
 
 def random_pauli_state(N, r=None):
     return random_pauli_map(N).to_state(r)
 
-def random_clifford_state(N, r=None):
-    return random_clifford_map(N).to_state(r)
-
+def random_clifford_state(N, r=None, device='cpu'):
+    return random_clifford_map(N, device=device).to_state(r)
