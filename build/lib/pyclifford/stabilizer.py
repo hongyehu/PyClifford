@@ -189,6 +189,7 @@ class StabilizerState(PauliList):
         C = numpy.random.randint(2, size=(L,self.N-self.r))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
+
     def get_prob(self, readout):
         '''
         Evaluate the probability of getting a bit string readout

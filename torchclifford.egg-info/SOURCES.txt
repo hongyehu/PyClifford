@@ -7,11 +7,6 @@ pyclifford/device.py
 pyclifford/paulialg.py
 pyclifford/stabilizer.py
 pyclifford/utils.py
-pyclifford.egg-info/PKG-INFO
-pyclifford.egg-info/SOURCES.txt
-pyclifford.egg-info/dependency_links.txt
-pyclifford.egg-info/requires.txt
-pyclifford.egg-info/top_level.txt
 pyclifford/tests/__init__.py
 pyclifford/tests/test_paulialg.py
 pyclifford/tests/test_stabilizer.py
@@ -20,6 +15,11 @@ torchclifford/circuit.py
 torchclifford/paulialg.py
 torchclifford/stabilizer.py
 torchclifford/utils.py
+torchclifford.egg-info/PKG-INFO
+torchclifford.egg-info/SOURCES.txt
+torchclifford.egg-info/dependency_links.txt
+torchclifford.egg-info/requires.txt
+torchclifford.egg-info/top_level.txt
 torchclifford/tests/__init__.py
 torchclifford/tests/test_circuit.py
 torchclifford/tests/test_paulialg.py
