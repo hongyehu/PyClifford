@@ -189,7 +189,6 @@ class StabilizerState(PauliList):
         C = numpy.random.randint(2, size=(L,self.N-self.r))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
-
     def get_prob(self, readout):
         '''
         Evaluate the probability of getting a bit string readout
@@ -279,7 +278,9 @@ def zero_state(N):
     return identity_map(N).to_state()
 
 def one_state(N):
-    return -zero_state(N)
+    gs = zero_state(N).gs
+    ps = (2*numpy.ones(2*N)).astype(int)
+    return StabilizerState(gs = gs,ps = ps)
 
 def ghz_state(N):
     objs = [pauli({i:3,i+1:3},N) for i in range(N-1)]

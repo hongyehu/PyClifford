@@ -886,3 +886,38 @@ def stabilizer_projection_trace(gs_stb, ps_stb, gs_obs, ps_obs, r):
             if not pa == ps_obs[k]:
                 trace = 0.
     return gs_stb, ps_stb, r, trace
+
+
+
+############ Jan 26 Added by Hong-Ye Hu #############
+@njit
+def decompose(g, gs, ps):
+    '''  Decompose a pauli string to phase*destabilizers*stabilizers
+    Parameters:
+    g: int(2*N) - the binary vector of a pauli string
+    gs: int(2*N,2*N) - the full tableau
+    ps: int(2*N) - phase of stabilizer and destabilizer
+    
+    Returns:
+    phase: int - phase in terms of imaginery power
+    b: int(N) - binary encoding of destabilizer decomposition
+    c: int(N) - binary encoding of stabilizer decomposition
+    '''
+    phase = 0
+    tmp_p = np.zeros_like(g)
+    N = gs.shape[0]//2
+    # b = int(np.zeros(N)) # numbda does not support change data type
+    # c = int(np.zeros(N))
+    b = np.array([0 for _ in range(N)])
+    c = np.array([0 for _ in range(N)])
+    for i in range(N):
+        if acq(g,gs[i]): #anti-commute
+            b[i] = 1
+            phase = phase - ipow(tmp_p,gs[i+N]) + ps[i+N]
+            tmp_p = (tmp_p+gs[i+N])%2
+    for i in range(N):
+        if acq(g,gs[i+N]): #anti-commute
+            c[i] = 1
+            phase = phase - ipow(tmp_p,gs[i]) + ps[i]
+            tmp_p = (tmp_p+gs[i])%2
+    return phase%4, tmp_p, b, c

@@ -1,6 +1,6 @@
 import numpy
 from .utils import mask, condense, pauli_diagonalize1
-from .paulialg import Pauli, pauli, pauli_zero
+from .paulialg import Pauli, pauli, PauliMonomial, pauli_zero
 from .stabilizer import (StabilizerState, CliffordMap,
     zero_state, identity_map, clifford_rotation_map, random_clifford_map)
 
@@ -181,6 +181,8 @@ class CliffordLayer(object):
             self.backward_map.embed(gate.backward_map, mask(gate.qubits, N))
         return self
 
+
+
 class CliffordCircuit(object):
     '''Represents a circuit of Clifford gates.
 
@@ -192,7 +194,8 @@ class CliffordCircuit(object):
     # or take in a specific gate
     g = pauli('-XX')
     circ.take(clifford_rotation_gate(g))'''
-    def __init__(self):
+    def __init__(self,N):
+        self.N = N # number of qubits in the system
         self.first_layer = CliffordLayer()
         self.last_layer = self.first_layer
         self.forward_map = None
@@ -214,7 +217,7 @@ class CliffordCircuit(object):
             return super().__getattribute__(item)
 
     def copy(self):
-        circ = CliffordCircuit()
+        circ = CliffordCircuit(self.N)
         for i, layer in enumerate(self.layers_forward()):
             new_layer = layer.copy()
             if i == 0:
@@ -245,6 +248,8 @@ class CliffordCircuit(object):
             layer = layer.next_layer
 
     def take(self, gate):
+        if max(gate.qubits)>=self.N:
+            raise ValueError("The gate acting on unregistered qubits!")
         if self.last_layer.independent_from(gate): # if last layer commute with the new gate
             self.last_layer.take(gate) # the last layer takes the gate
         else: # otherwise create a new layer to handle this
@@ -256,6 +261,8 @@ class CliffordCircuit(object):
         return self
         
     def gate(self, *qubits):
+        if max(qubits)>=self.N:
+            raise ValueError("The gate acting on unregistered qubits!")
         return self.take(CliffordGate(*qubits)) # create a new gate
 
     def compose(self, other):
@@ -267,6 +274,8 @@ class CliffordCircuit(object):
 
         Note: composition will not update the compiled information. Need 
             compilation after circuit composition.'''
+        if not other.N == self.N:
+            raise ValueError("Qubit number does not match!")
         for layer in other.layers_forward():
             for gate in layer.gates:
                 self.take(gate)
@@ -333,7 +342,7 @@ def identity_circuit(N = None):
 
     Parameters:
     N: int - number of qubits.'''
-    circ = CliffordCircuit()
+    circ = CliffordCircuit(N)
     if N is not None:
         circ.N = N  # fix number of qubits explicitly
     return circ
@@ -386,7 +395,7 @@ def diagonalize(obj, i0 = 0, causal=False):
     Returns:
     circ: CliffordCircuit - circuit that diagonalizes obj.'''
     circ = identity_circuit(obj.N)
-    if isinstance(obj, (Pauli)):
+    if isinstance(obj, (Pauli, PauliMonomial)):
         if causal:
             for g in pauli_diagonalize1(obj.g[2*i0:]):
                 circ.take(clifford_rotation_gate(Pauli(g), numpy.arange(i0,obj.N)))
@@ -402,7 +411,8 @@ def diagonalize(obj, i0 = 0, causal=False):
         raise NotImplementedError('diagonalization is not implemented for {}.'.format(type(obj).__name__))
     return circ
 
-def SBRG(hmdl, max_rate=2., tol=1.e-8):
+
+def SBRG(hmdl, N, max_rate=2., tol=1.e-8):
     '''Approximately diagonalize a Hamiltonian by SBRG.
 
     Parameters:
@@ -417,6 +427,8 @@ def SBRG(hmdl, max_rate=2., tol=1.e-8):
     heff = pauli_zero(N) # create effective Hamiltonian
     # SBRG iteration
     for i0 in range(N): # pivot through every qubit
+        if len(htmp) == 0:
+            break
         leading = numpy.argmax(numpy.abs(htmp.cs)) # get leading term index
         # find circuit to diagonalize leading term to i0
         circ_i0 = diagonalize(htmp[leading], i0, causal=True) 
