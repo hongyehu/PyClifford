@@ -18,7 +18,5 @@ This is a `python` based clifford circuit simulation package which not only offe
 **For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
 
 
-# To-Do and Issues:
 
-1. Currently there is no conflict detection for CliffordGate class. So users can assign conflicting Clifford map by using both `gate.set_generator()` and `gate.set_forward_map()`. We need to add a conflict detection.
 
