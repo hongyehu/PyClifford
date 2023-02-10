@@ -9,14 +9,21 @@
 
 This is a `python` based clifford circuit simulation package which not only offers the fast simulation but also supports analytical level manipulation of pauli operators and stabilizer states. And we are working on quantum circuit (strong/weak) simulations that include a few T-gates.
 
+## Application show cases:
+ - Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group/Strong Disorder Renormalization Group
+ - Measurement induced phase transition
+ - Clifford ansatz for quantum chemistry 
+
 ## Dependence of `PyClifford`:
 - Numba
 - Numpy
 - QuTip
 - Matplotlib
-## Dependence of `PyClifford` Quantum Chemistry:
+### Dependence of `PyClifford` Quantum Chemistry:
 - Qiskit 0.39.4
 - Pyscf 2.0.1
+
+
 
 <!--**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`-->
 
