@@ -14,8 +14,11 @@ This is a `python` based clifford circuit simulation package which not only offe
 - Numpy
 - QuTip
 - Matplotlib
+## Dependence of `PyClifford` Quantum Chemistry:
+- Qiskit 0.39.4
+- Pyscf 2.0.1
 
-**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
+<!--**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`-->
 
 
 
