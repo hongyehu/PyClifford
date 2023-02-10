@@ -3,6 +3,7 @@
   1. Add `stabilizer.postselection()` method
   2. Add `MeasureLayer()` class. This will support mid-circuit measurement
   3. Add `Circuit()` class. If there is no `MeasurementLayer`, `self.unitary=True`, and it should be the same as the `CliffordCircuit` class. If measurement is added, it is not unitary. `forward(obj)` will perform circuit unitary $U$ and measurements, and `backward()` will perform $U^{\dagger}$ and `postselection` on the states.
+  4. Add pyclifford quantum chemistry interface. The code is in `qchem.py` file. With PySCF and Qiskit, user can generate quantum chemistry Hamiltonian in pyclifford format, and calculated mean-field (Hatree-Fock) energy and exact energy.
 
 
  # To Do List:
