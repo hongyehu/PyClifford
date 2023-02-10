@@ -10,10 +10,10 @@
 This is a `python` based clifford circuit simulation package which not only offers the fast simulation but also supports analytical level manipulation of pauli operators and stabilizer states. And we are working on quantum circuit (strong/weak) simulations that include a few T-gates.
 
 ## Application show cases:
- 1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group/Strong Disorder Renormalization Group
- 2. Measurement induced phase transition
- 3. Classical shadow tomography with shallow layers
- 4. Clifford ansatz for quantum chemistry 
+ 1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group (Condensed Matter Physics)
+ 2. Measurement induced phase transition (Condensed Matter Physics/Quantum Error Correction)
+ 3. Classical shadow tomography with shallow layers (Quantum Computation & Information)
+ 4. Clifford ansatz for quantum chemistry (Quantum Computation & Quantum Chemistry)
 
 ## Dependence of `PyClifford`:
 - Numba
