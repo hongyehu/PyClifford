@@ -1,5 +1,6 @@
 import numpy
-from .utils import mask, condense, pauli_diagonalize1
+import numpy as np
+from .utils import mask, condense, pauli_diagonalize1,stabilizer_measure
 from .paulialg import Pauli, pauli, PauliMonomial, pauli_zero
 from .stabilizer import (StabilizerState, CliffordMap,
     zero_state, identity_map, clifford_rotation_map, random_clifford_map)
@@ -79,6 +80,8 @@ class CliffordGate(object):
             if self.n == obj.N: # global gate
                 obj.transform_by(clifford_map)
             else: # local gate
+                # print("Clifford gate acting: ",self.qubits)
+                # print("mask in CliffordGate: ",mask(self.qubits, obj.N))
                 obj.transform_by(clifford_map, mask(self.qubits, obj.N))
         return obj
 
@@ -120,6 +123,7 @@ class CliffordGate(object):
                     self.backward_map = self.forward_map.inverse()
         return self
 
+
 class CliffordLayer(object):
     '''Representes a layer of Clifford gates.
 
@@ -147,7 +151,9 @@ class CliffordLayer(object):
         return all(gate.independent_from(other_gate) for gate in self.gates)
     
     def take(self, gate):
-        if self.prev_layer is None: # if I have no previous layer
+        if (self.prev_layer is None) or isinstance(self.prev_layer, MeasureLayer):
+             # if I have no previous layer
+             # or previous layer is measurement
             self.gates.append(gate) # I will take the gate
         else: # if I have a previous layer, check it
             if self.prev_layer.independent_from(gate): # if independent (not overlapping)
@@ -181,7 +187,67 @@ class CliffordLayer(object):
             self.backward_map.embed(gate.backward_map, mask(gate.qubits, N))
         return self
 
-
+class MeasureLayer(object):
+    '''
+    Computational basis measurement
+    '''
+    def __init__(self, *qubits,N):
+        self.qubits = qubits # qubits that are measured
+        self.result = None
+        self.log2prob = None
+        self.N = N
+        self.gs, self.ps = self.obs_gs_ps()
+        self.prev_layer = None   # the previous layer
+        self.next_layer = None   # the next layer
+    def __repr__(self):
+        return '|Mz[{}]|'.format(','.join(str(qubit) for qubit in self.qubits))
+    def obs_gs_ps(self):
+        ps = np.zeros(len(self.qubits)).astype(int)
+        gs = np.zeros((len(self.qubits),2*self.N)).astype(int)
+        for i in range(len(self.qubits)):
+            gs[i,2*self.qubits[i]+1]=1
+        return gs, ps
+    def forward(self,obj):
+        '''
+        Measurement will in-place change the stabilizer state. 
+        '''
+        if not isinstance(obj,StabilizerState):
+            raise NotImplementedError("the object is not a stabilizer state")
+        tmp_gs_stb, tmp_ps_stb, tmp_r, tmp_out, tmp_log2prob = \
+        stabilizer_measure(obj.gs,obj.ps,self.gs,self.ps,obj.r)
+        self.result = (-1)**tmp_out
+        self.log2prob = tmp_log2prob
+        return obj
+    def backward(self,obj,measure_result = None):
+        '''
+        backward is post-selection
+        Input:
+        - measure_result: list of integers, such as [1,-1,1]
+        '''
+        if measure_result is not None:
+            if len(measure_result)!=len(self.qubits):
+                raise ValueError("classical bit does not match number of qubits.")
+            else:
+                for ii in range(1,len(measure_result)+1):
+                    tmp = list(np.zeros(self.N).astype(int))
+                    tmp[self.qubits[-ii]]=3
+                    tmp_res = int((1-measure_result[-ii])/2)
+                    prob = obj.postselect(pauli(tmp), tmp_res)
+                    if prob == 0.0:
+                        raise ValueError("Post-selection result is not possible, they are orthogonal states.")
+                return obj
+        else:
+            if self.result is None:
+                raise ValueError("post-selection result is not given.")
+            else:
+                for ii in range(1,len(self.result)+1):
+                    tmp = list(np.zeros(self.N).astype(int))
+                    tmp[self.qubits[-ii]]=3
+                    tmp_res = int((1-self.result[-ii])/2)
+                    prob = obj.postselect(pauli(tmp), tmp_res)
+                    if prob == 0.0:
+                        raise ValueError("Post-selection result is not possible, they are orthogonal states.")
+                return obj
 
 class CliffordCircuit(object):
     '''Represents a circuit of Clifford gates.
@@ -318,6 +384,159 @@ class CliffordCircuit(object):
         for _ in range(nsample):
             zero = zero_state(self.N)
             yield self.backward(zero)
+
+class Circuit(object):
+    '''
+    Reprsents a Clifford circuit with measurements
+    '''
+    def __init__(self,N):
+        self.N = N # number of qubits in the system
+        self.first_layer = CliffordLayer()
+        self.last_layer = self.first_layer
+        self.measure_result = []
+        self.log2prob = 0.0
+        self.unitary = True # if True, no measurement layer is inside
+        self.forward_map = None
+        self.backward_map = None
+        self.num_of_measures = 0
+    def __repr__(self):
+        layout = '\n'.join(repr(layer) for layer in self.layers_backward())
+        c =  'CliffordCircuit(\n{})'.format(layout).replace('\n','\n  ')+\
+        '\n Unitary:{}'.format(self.unitary)
+        return c
+
+    def layers_backward(self):
+        # yield from last to first layers
+        layer = self.last_layer
+        while layer is not None:
+            yield layer
+            layer = layer.prev_layer
+    
+    def layers_forward(self):
+        # yield from first to last layers
+        layer = self.first_layer
+        while layer is not None:
+            yield layer
+            layer = layer.next_layer
+            
+    def take(self, gate):
+        '''
+        it can take Clifford gate or measurement layers
+        '''
+        if (max(gate.qubits)>=self.N):
+            raise ValueError("The gate acting on unregistered qubits!")
+        if isinstance(gate,CliffordGate):
+            if not isinstance(self.last_layer,MeasureLayer):
+                if self.last_layer.independent_from(gate): # if last layer commute with the new gate
+                    self.last_layer.take(gate) # the last layer takes the gate
+                else: # otherwise create a new layer to handle this
+                    new_layer = CliffordLayer(gate) # a new layer with the new gate
+                    # link to the layer structure
+                    self.last_layer.next_layer = new_layer
+                    new_layer.prev_layer = self.last_layer
+                    self.last_layer = new_layer # new layer becomes the last
+            else: # otherwise create a new layer to handle this
+                new_layer = CliffordLayer(gate) # a new layer with the new gate
+                # link to the layer structure
+                self.last_layer.next_layer = new_layer
+                new_layer.prev_layer = self.last_layer
+                self.last_layer = new_layer # new layer becomes the last
+            return self
+        elif isinstance(gate,MeasureLayer):
+            self.unitary = False
+            self.num_of_measures += len(gate.qubits)
+            self.last_layer.next_layer = gate
+            gate.prev_layer = self.last_layer
+            self.last_layer = gate
+            return self
+        else:
+            raise NotImplementedError("Unknow input.")
+    def gate(self, *qubits):
+        if max(qubits)>=self.N:
+            raise ValueError("The gate acting on unregistered qubits!")
+        return self.take(CliffordGate(*qubits)) # create a new gate
+    def measure(self,*qubits):
+        if max(qubits)>=self.N:
+            raise ValueError("The gate acting on unregistered qubits!")
+        return self.take(MeasureLayer(*qubits,N = self.N)) # create measurement layer
+    def forward(self,obj):
+        if self.unitary:
+            if self.forward_map is None:
+                for layer in self.layers_forward():
+                    layer.forward(obj)
+            else:
+                obj.transform_by(self.forward_map)
+            return obj
+        else:
+            for layer in self.layers_forward():
+                if not isinstance(layer,MeasureLayer):
+                    layer.forward(obj)
+                else:
+                    layer.forward(obj)
+                    self.measure_result += layer.result.tolist()
+                    self.log2prob += layer.log2prob
+            return obj
+    def backward(self,obj,measure_result = None):
+        if self.unitary:
+            if self.backward_map is None:
+                for layer in self.layers_backward():
+                    layer.backward(obj)
+            else:
+                obj.transform_by(self.backward_map)
+            return obj
+        else:
+            if measure_result is not None:
+                if len(measure_result)!=self.num_of_measures:
+                    raise ValueError("classical bit does not match number of measurements.")
+                else:
+                    pointer = 0
+                    for layer in self.layers_backward():
+                        if isinstance(layer,MeasureLayer):
+                            new_pointer = pointer - len(layer.qubits)
+                            if pointer == 0:
+                                layer.backward(obj,measure_result = measure_result[new_pointer:])
+                            else:
+                                layer.backward(obj,measure_result = measure_result[new_pointer:pointer])
+                            pointer = new_pointer
+                        else:
+                            layer.backward(obj)
+                    return obj
+            else:
+                if len(self.measure_result)>0:
+                    pointer = 0
+                    for layer in self.layers_backward():
+                        if isinstance(layer,MeasureLayer):
+                            new_pointer = pointer - len(layer.qubits)
+                            if pointer == 0:
+                                layer.backward(obj,measure_result = self.measure_result[new_pointer:])
+                            else:
+                                layer.backward(obj,measure_result = self.measure_result[new_pointer:pointer])
+                            pointer = new_pointer
+                        else:
+                            layer.backward(obj)
+                    return obj
+                else:
+                    raise ValueError("self measurement result is empty, and measurement result is not given!")
+        
+    def compile(self):
+        '''Construct forward and backward Clifford maps for this circuit
+        
+        Note: The compilation creates a single Clifford map representing the
+            entire circuit, which allows it to run faster for deep circuits.'''
+        N = self.N
+        if self.unitary:
+            self.forward_map = identity_map(N)
+            self.backward_map = identity_map(N)
+            for layer in self.layers_forward():
+                layer.compile(N)
+                self.forward_map = self.forward_map.compose(layer.forward_map)
+                self.backward_map = self.backward_map.compose(layer.backward_map)
+            return self 
+        else: # has measurement, compile unitary layers
+            for layer in self.layers_forward():
+                if not isinstance(layer, MeasureLayer):
+                    layer.compile(N)
+            return self
 
 # ---- gate constructors ----
 def clifford_rotation_gate(generator, qubits=None):

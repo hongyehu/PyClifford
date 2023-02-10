@@ -921,3 +921,60 @@ def decompose(g, gs, ps):
             phase = phase - ipow(tmp_p,gs[i]) + ps[i]
             tmp_p = (tmp_p+gs[i])%2
     return phase%4, tmp_p, b, c
+
+@njit
+def stabilizer_postselection(gs_stb, ps_stb, gs_ob, ps_ob):
+    '''
+    Stabilizer post-selection (pure state)
+    
+    Parameters:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    gs_ob: int (2*N) - strings of Pauli operators to be measured.
+    ps_obs: int (1) - phase indicators of Pauli operators to be measured.
+    Returns:
+    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    prob: float 
+    '''
+    (_, Ng) = gs_stb.shape
+    N = Ng//2
+    ga = numpy.empty(2*N, dtype=numpy.int_) # workspace for stabilizer accumulation
+    pa = 0 # workspace for phase accumulation
+    prob = 1.0
+    # one projection by gs_ob
+    update = False
+    p=0
+    ga[:] = 0
+    pa = 0
+    for j in range(2*N):
+        if acq(gs_stb[j], gs_ob): # find gs_stb[j] anticommute with gs_obs[k]
+            if update: # if gs_stb[j] is not the first anticommuting operator
+                # update gs_stb[j] to commute with gs_obs[k]
+                if j < N: # if gs_stb[j] is a stablizer, phase matters
+                    ps_stb[j] = (ps_stb[j] + ps_stb[p] + ipow(gs_stb[j], gs_stb[p]))%4
+                gs_stb[j] = (gs_stb[j] + gs_stb[p])%2
+            else: # if gs_stb[j] is the first anticommuting operator
+                if j < N: # if gs_stb[j] is not an active destabilizer
+                    p = j # move pointer to j
+                    update = True
+
+                else: # gs_stb[j] anticommute with destabilizer, meaning gs_obs[k] already a combination of active stabilizers
+                    # collect corresponding stabilizer component to ga
+                    pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
+                    ga = (ga + gs_stb[j-N])%2
+    if update:
+        # now gs_stb[p] and gs_obs[k] anticommute
+        q = (p+N)%(2*N) # get q as dual of p 
+        gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
+        gs_stb[p] = gs_ob # add gs_obs[k] to gs_stb[p]
+
+        # the projection will change phase of stabilizer
+        ps_stb[p] = ps_ob
+        prob = prob/2.0
+
+    else: # no update, gs_obs[k] is eigen, result is in pa
+        assert((ga == gs_ob).all())
+        if not pa == ps_ob:
+            prob = 0.
+    return gs_stb, ps_stb, prob

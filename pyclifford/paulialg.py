@@ -3,6 +3,7 @@ from .utils import (
     ipow, pauli_tokenize, 
     clifford_rotate, pauli_transform,
     batch_dot, aggregate)
+import qutip as qt
 
 class Pauli(object):
     '''Represents a Pauli operator.
@@ -126,6 +127,20 @@ class Pauli(object):
         gs = numpy.expand_dim(self.g, 0)
         ps = numpy.array([self.p])
         return pauli_tokenize(gs, ps)
+    def to_qutip(self):
+        paulis = [qt.qeye(2), qt.sigmax(), qt.sigmay(), qt.sigmaz()]
+        tmp_list=[]
+        for i in range(self.g.shape[0]//2):
+            if (self.g[2*i]==1)&(self.g[2*i+1]==1):
+                tmp_list.append(paulis[2])
+            elif (self.g[2*i]==1)&(self.g[2*i+1]==0):
+                tmp_list.append(paulis[1])
+            elif (self.g[2*i]==0)&(self.g[2*i+1]==1):
+                tmp_list.append(paulis[3])
+            else:
+                tmp_list.append(paulis[0])
+        return (1j)**(self.p)*qt.tensor(tmp_list)
+
 
 class PauliList(object):
     '''Represents a list of Pauli operators.
@@ -202,13 +217,33 @@ class PauliList(object):
             self.gs, self.ps = pauli_transform(self.gs, self.ps, 
                 clifford_map.gs, clifford_map.ps)
         else:
+            # print("mask: ",mask)
             mask2 = numpy.repeat(mask, 2)
+            # print("shape of mask2:",self.gs[:,mask2].shape)
+            # print("shape of gs: ",clifford_map.gs.shape)
+            # print("shape of ps: ",clifford_map.ps.shape)
             self.gs[:,mask2], self.ps = pauli_transform(
                 self.gs[:,mask2], self.ps, clifford_map.gs, clifford_map.ps)
         return self
 
     def tokenize(self):
         return pauli_tokenize(self.gs, self.ps)
+    def to_qutip(self):
+        lists = []
+        paulis = [qt.qeye(2),qt.sigmax(),qt.sigmay(),qt.sigmaz()]
+        for l in range(self.L):
+            tmp_list=[]
+            for i in range(self.N):
+                if (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==1):
+                    tmp_list.append(paulis[2])
+                elif (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==0):
+                    tmp_list.append(paulis[1])
+                elif (self.gs[l,2*i]==0)&(self.gs[l,2*i+1]==1):
+                    tmp_list.append(paulis[3])
+                else:
+                    tmp_list.append(paulis[0])
+            lists.append((1j)**(self.ps[l])*qt.tensor(tmp_list))
+        return lists
 
 class PauliMonomial(Pauli):
     '''Represent a Pauli operator with a coefficient.
@@ -291,6 +326,19 @@ class PauliMonomial(Pauli):
 
     def inverse(self):
         return Pauli(self.g)/(self.c * 1j**self.p)
+    def to_qutip(self):
+        paulis = [qt.qeye(2), qt.sigmax(), qt.sigmay(), qt.sigmaz()]
+        tmp_list=[]
+        for i in range(self.g.shape[0]//2):
+            if (self.g[2*i]==1)&(self.g[2*i+1]==1):
+                tmp_list.append(paulis[2])
+            elif (self.g[2*i]==1)&(self.g[2*i+1]==0):
+                tmp_list.append(paulis[1])
+            elif (self.g[2*i]==0)&(self.g[2*i+1]==1):
+                tmp_list.append(paulis[3])
+            else:
+                tmp_list.append(paulis[0])
+        return self.c*(1j)**(self.p)*qt.tensor(tmp_list)
 
 class PauliPolynomial(PauliList):
     '''Represent a linear combination of Pauli operators.
@@ -377,6 +425,22 @@ class PauliPolynomial(PauliList):
         cs = aggregate(self.cs * 1j**self.ps, inds, gs.shape[0])
         mask = (numpy.abs(cs) > tol)
         return PauliPolynomial(gs[mask]).set_cs(cs[mask])
+    def to_qutip(self):
+        paulis = [qt.qeye(2),qt.sigmax(),qt.sigmay(),qt.sigmaz()]
+        summation = 0
+        for l in range(self.L):
+            tmp_list=[]
+            for i in range(self.N):
+                if (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==1):
+                    tmp_list.append(paulis[2])
+                elif (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==0):
+                    tmp_list.append(paulis[1])
+                elif (self.gs[l,2*i]==0)&(self.gs[l,2*i+1]==1):
+                    tmp_list.append(paulis[3])
+                else:
+                    tmp_list.append(paulis[0])
+            summation += self.cs[l]*(1j)**(self.ps[l])*qt.tensor(tmp_list)
+        return summation
 
 # ---- constructors ----
 def pauli(obj, N = None):

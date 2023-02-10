@@ -4,7 +4,7 @@ from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
     stabilizer_project, stabilizer_measure, stabilizer_expect, 
-    stabilizer_entropy, mask, stabilizer_projection_trace)
+    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
@@ -130,6 +130,15 @@ class StabilizerState(PauliList):
         self.gs, self.ps, self.r, out, log2prob = stabilizer_measure(
             self.gs, self.ps, obs.gs, obs.ps, self.r)
         return out, log2prob
+    def postselect(self, paulistring, postselect_res):
+        '''
+        paulistring: is the measurement
+        postselect_res: is the post-selection result. 0 means (+1), 1 means (-1)
+        '''
+        if self.r != 0:
+            raise ValueError("Currently, post-selection is only supported with pure states")
+        self.gs, self.ps, prob = stabilizer_postselection(self.gs, self.ps, paulistring.g, int(postselect_res*2))
+        return prob
 
     def expect(self, obs):
         '''Evaluate expectation values of observables on the statilizer state.
