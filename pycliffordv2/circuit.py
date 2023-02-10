@@ -80,6 +80,8 @@ class CliffordGate(object):
             if self.n == obj.N: # global gate
                 obj.transform_by(clifford_map)
             else: # local gate
+                # print("Clifford gate acting: ",self.qubits)
+                # print("mask in CliffordGate: ",mask(self.qubits, obj.N))
                 obj.transform_by(clifford_map, mask(self.qubits, obj.N))
         return obj
 
@@ -149,7 +151,9 @@ class CliffordLayer(object):
         return all(gate.independent_from(other_gate) for gate in self.gates)
     
     def take(self, gate):
-        if self.prev_layer is None: # if I have no previous layer
+        if (self.prev_layer is None) or isinstance(self.prev_layer, MeasureLayer):
+             # if I have no previous layer
+             # or previous layer is measurement
             self.gates.append(gate) # I will take the gate
         else: # if I have a previous layer, check it
             if self.prev_layer.independent_from(gate): # if independent (not overlapping)

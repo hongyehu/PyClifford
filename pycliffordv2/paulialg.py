@@ -217,7 +217,11 @@ class PauliList(object):
             self.gs, self.ps = pauli_transform(self.gs, self.ps, 
                 clifford_map.gs, clifford_map.ps)
         else:
+            # print("mask: ",mask)
             mask2 = numpy.repeat(mask, 2)
+            # print("shape of mask2:",self.gs[:,mask2].shape)
+            # print("shape of gs: ",clifford_map.gs.shape)
+            # print("shape of ps: ",clifford_map.ps.shape)
             self.gs[:,mask2], self.ps = pauli_transform(
                 self.gs[:,mask2], self.ps, clifford_map.gs, clifford_map.ps)
         return self
