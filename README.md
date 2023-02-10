@@ -12,7 +12,8 @@ This is a `python` based clifford circuit simulation package which not only offe
 ## Application show cases:
  1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group/Strong Disorder Renormalization Group
  2. Measurement induced phase transition
- 3. Clifford ansatz for quantum chemistry 
+ 3. Classical shadow tomography with shallow layers
+ 4. Clifford ansatz for quantum chemistry 
 
 ## Dependence of `PyClifford`:
 - Numba
