@@ -537,6 +537,16 @@ class Circuit(object):
                 if not isinstance(layer, MeasureLayer):
                     layer.compile(N)
             return self
+    def povm(self, nsample):
+        '''Assuming computational basis measurement follows the circuit, this
+        will back evolve the computational basis state to generate prior POVM.
+        This returns a generator.'''
+        if self.unitary:
+            for _ in range(nsample):
+                zero = zero_state(self.N)
+                yield self.backward(zero)
+        else:
+            raise NotImplementedError("The circuit has mid-circuit measurement. Therefore, it is unclear what is the POVM in the Heisenberg picture.")
 
 # ---- gate constructors ----
 def clifford_rotation_gate(generator, qubits=None):
@@ -669,6 +679,28 @@ def SBRG(hmdl, N, max_rate=2., tol=1.e-8):
         htmp = htmp[~mask_trivial] # retain with non-trivial terms
     return heff, circ
 
-
-
-
+### gates ####
+def H(*qubits):
+    if len(qubits)!=1:
+        raise ValueError("Hadmand gate only acts on a single qubit.")
+    gate = CliffordGate(*qubits)
+    f_map = CliffordMap(gs = np.array([[0,1],[1,0]]),ps = np.array([0,0]))
+    gate.set_forward_map(f_map)
+    return gate
+def S(*qubits):
+    if len(qubits)!=1:
+        raise ValueError("S gate only acts on a single qubit.")
+    gate = CliffordGate(*qubits)
+    f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([0,0]))
+    gate.set_forward_map(f_map)
+    return gate
+def CNOT(*qubits):
+    if len(qubits)!=2:
+        raise ValueError("CNOT gate acts on two qubit.")
+    gate = CliffordGate(*qubits)
+    if qubits[0]<qubits[1]:
+        f_map = CliffordMap(gs = np.array([[1,0,1,0],[0,1,0,0],[0,0,1,0],[0,1,0,1]]),ps = np.array([0,0,0,0]))
+    else:
+        f_map = CliffordMap(gs = np.array([[1,0,0,0],[0,1,0,1],[1,0,1,0],[0,0,0,1]]),ps = np.array([0,0,0,0]))
+    gate.set_forward_map(f_map)
+    return gate

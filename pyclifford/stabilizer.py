@@ -1,5 +1,6 @@
 import numpy
 import qutip as qt
+from numba import njit
 from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
@@ -302,3 +303,14 @@ def random_pauli_state(N, r=None):
 def random_clifford_state(N, r=None):
     return random_clifford_map(N).to_state(r)
 
+@njit
+def random_bit_state_gs_ps(N):
+    gs = numpy.zeros((2*N,2*N))
+    for i in range(N):
+        gs[i,2*i+1]=1
+        gs[N+i,2*i]=1
+    ps = numpy.random.choice(numpy.array([0,2]),size = 2*N)
+    return gs, ps
+def random_bit_state(N):
+    gs, ps = random_bit_state_gs_ps(N)
+    return StabilizerState(gs = gs.astype(int), ps = ps)
