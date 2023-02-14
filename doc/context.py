@@ -2,6 +2,6 @@ import sys
 sys.path.insert(0, '..')
 
 import numpy
-import pyclifford
-from pyclifford import (utils, paulialg, stabilizer, circuit, device)
+import pycliffordv2
+from pycliffordv2 import (utils, paulialg, stabilizer, circuit, device)
 # from src import *

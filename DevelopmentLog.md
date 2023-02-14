@@ -8,5 +8,5 @@
 
  # To Do List:
  1. Check `Circuit()` is correct and replace `CliffordCircuit`.
- 2. Currently there is no conflict detection for CliffordGate class. So users can assign conflicting Clifford map by using both `gate.set_generator()` and `gate.set_forward_map()`. We need to add a conflict detection.
+ 2. Currently there is no conflict detection for CliffordGate class. So users can assign conflicting Clifford map by using both `gate.set_generator()` and `gate.set_forward_map()`. We need to add a conflict detection. (YZYou: there is a priority that when the gate implements the unitary transformation, generator will be used first, otherwise, clifford map.)
  3. Speed up `expectation()` method: possible solution: 1) njit(parallel) 2) use Heisenberg evolution, and calculate expetation of Pauli strings in the zero state 3) test performance of Nvidia `cuNumerics`, to change numpy arrays.
