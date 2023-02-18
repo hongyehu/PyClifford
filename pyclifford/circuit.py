@@ -694,6 +694,84 @@ def S(*qubits):
     f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([0,0]))
     gate.set_forward_map(f_map)
     return gate
+def X(*qubits):
+    if len(qubits)!=1:
+        raise ValueError("X gate only acts on a single qubit.")
+    gate = CliffordGate(*qubits)
+    f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([0,2]))
+    gate.set_forward_map(f_map)
+    return gate
+def Y(*qubits):
+    if len(qubits)!=1:
+        raise ValueError("Y gate only acts on a single qubit.")
+    gate = CliffordGate(*qubits)
+    f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([2,2]))
+    gate.set_forward_map(f_map)
+    return gate
+def Z(*qubits):
+    if len(qubits)!=1:
+        raise ValueError("Z gate only acts on a single qubit.")
+    gate = CliffordGate(*qubits)
+    f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([2,0]))
+    gate.set_forward_map(f_map)
+    return gate
+def C(num, *qubits):
+    # single qubit Clifford gate, num: 0-23
+    if len(qubits)!=1:
+        raise ValueError("Single qubit Clifford gate acts on single qubit.")
+    gate = CliffordGate(*qubits)
+    if num == 0:
+        f_map = CliffordMap(gs = np.array([[1,0],[1,1]]),ps = np.array([0,0]))
+    elif num == 1:
+        f_map = CliffordMap(gs = np.array([[1,0],[1,1]]),ps = np.array([0,2]))
+    elif num == 2:
+        f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([0,0]))
+    elif num == 3:
+        f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([0,2]))
+    elif num == 4:
+        f_map = CliffordMap(gs = np.array([[1,0],[1,1]]),ps = np.array([2,0]))
+    elif num == 5:
+        f_map = CliffordMap(gs = np.array([[1,0],[1,1]]),ps = np.array([2,2]))
+    elif num == 6:
+        f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([0,2]))
+    elif num == 7:
+        f_map = CliffordMap(gs = np.array([[1,0],[0,1]]),ps = np.array([2,2]))
+    elif num == 8:
+        f_map = CliffordMap(gs = np.array([[1,1],[1,0]]),ps = np.array([0,0]))
+    elif num == 9:
+        f_map = CliffordMap(gs = np.array([[1,1],[1,0]]),ps = np.array([0,2]))
+    elif num == 10:
+        f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([0,0]))
+    elif num == 11:
+        f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([0,2]))
+    elif num == 12:
+        f_map = CliffordMap(gs = np.array([[1,1],[1,0]]),ps = np.array([2,0]))
+    elif num == 13:
+        f_map = CliffordMap(gs = np.array([[1,1],[1,0]]),ps = np.array([2,2]))
+    elif num == 14:
+        f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([2,0]))
+    elif num == 15:
+        f_map = CliffordMap(gs = np.array([[1,1],[0,1]]),ps = np.array([2,2]))
+    elif num == 16:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,0]]),ps = np.array([0,0]))
+    elif num == 17:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,0]]),ps = np.array([0,2]))
+    elif num == 18:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,1]]),ps = np.array([0,0]))
+    elif num == 19:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,1]]),ps = np.array([0,2]))
+    elif num == 20:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,0]]),ps = np.array([2,0]))
+    elif num == 21:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,0]]),ps = np.array([2,2]))
+    elif num == 22:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,1]]),ps = np.array([2,0]))
+    elif num == 23:
+        f_map = CliffordMap(gs = np.array([[0,1],[1,1]]),ps = np.array([2,2]))
+    else:
+        raise ValueError("There are only 24 single qubit Clifford gate. Input number exceed 0-23.")
+    gate.set_forward_map(f_map)
+    return gate
 def CNOT(*qubits):
     if len(qubits)!=2:
         raise ValueError("CNOT gate acts on two qubit.")
