@@ -5,6 +5,10 @@
   3. Add `Circuit()` class. If there is no `MeasurementLayer`, `self.unitary=True`, and it should be the same as the `CliffordCircuit` class. If measurement is added, it is not unitary. `forward(obj)` will perform circuit unitary $U$ and measurements, and `backward()` will perform $U^{\dagger}$ and `postselection` on the states.
   4. Add pyclifford quantum chemistry interface. The code is in `qchem.py` file. With PySCF and Qiskit, user can generate quantum chemistry Hamiltonian in pyclifford format, and calculated mean-field (Hatree-Fock) energy and exact energy.
 
+ - Feb 17th (Hong-Ye Hu):
+ 1. Add many Pauli/Clifford gates, such as X,Y,Z,H,S,CNOT to circuit.py
+ 2. Add 24 single qubit Clifford gate. And user can use C(gate_num, qubits) to specify the single qubit Clifford gate.
+
 
  # To Do List:
  1. Check `Circuit()` is correct and replace `CliffordCircuit`.
