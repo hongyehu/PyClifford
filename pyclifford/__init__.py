@@ -16,5 +16,5 @@ from .circuit import(
     identity_circuit, brickwall_rcc, onsite_rcc, global_rcc,
     diagonalize, SBRG)
 from .device import ClassicalShadow
-from .qchem import qchem_hamiltonian
+#from .qchem import qchem_hamiltonian
 
