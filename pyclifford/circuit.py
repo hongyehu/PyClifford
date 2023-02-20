@@ -641,7 +641,7 @@ def diagonalize(obj, i0 = 0, causal=False):
     return circ
 
 
-def SBRG(hmdl, N, max_rate=2., tol=1.e-8):
+def SBRG(hmdl, max_rate=2., tol=1.e-8):
     '''Approximately diagonalize a Hamiltonian by SBRG.
 
     Parameters:
@@ -660,7 +660,7 @@ def SBRG(hmdl, N, max_rate=2., tol=1.e-8):
             break
         leading = numpy.argmax(numpy.abs(htmp.cs)) # get leading term index
         # find circuit to diagonalize leading term to i0
-        circ_i0 = diagonalize(htmp[leading], i0, causal=True) 
+        circ_i0 = diagonalize(htmp[leading], i0, causal=True)
         circ.compose(circ_i0) # append it to total circuit
         circ_i0.forward(htmp) # apply it to Hamiltonian
         mask_commute = htmp.gs[:,2*i0] == 0 # mask diagonal terms
@@ -672,7 +672,8 @@ def SBRG(hmdl, N, max_rate=2., tol=1.e-8):
             # eleminate offdiagonal terms by perturbation theory
             len_max = int(round(max_rate * len_anti)) # max perturbation terms to keep
             prod = (offdiag @ offdiag).reduce(tol)[:len_max]
-            htmp = diag + 0.5 * (htmp[leading].inverse() @ prod)
+            if len(prod) != 0:
+                htmp = diag + 0.5 * (htmp[leading].inverse() @ prod)
         # mask terms that has become trivial on the remaining qubits
         mask_trivial = numpy.all(htmp.gs[:,(2*i0+2):] == 0, -1)
         heff += htmp[mask_trivial] # collect trivial terms to effective Hamiltonian
