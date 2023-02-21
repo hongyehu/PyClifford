@@ -22,18 +22,27 @@ License-File: LICENSE.md
 
 This is a `python` based clifford circuit simulation package which not only offers the fast simulation but also supports analytical level manipulation of pauli operators and stabilizer states. And we are working on quantum circuit (strong/weak) simulations that include a few T-gates.
 
+## Application show cases:
+ 1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group (*Condensed Matter Physics*)
+ 2. Measurement induced phase transition (*Condensed Matter Physics/Quantum Error Correction*)
+ 3. Classical shadow tomography with shallow layers (*Quantum Computation & Information*)
+ 4. Clifford ansatz for quantum chemistry (*Quantum Computation & Quantum Chemistry*)
+
 ## Dependence of `PyClifford`:
 - Numba
 - Numpy
 - QuTip
 - Matplotlib
+### Dependence of `PyClifford` Quantum Chemistry:
+- Qiskit 0.39.4
+- Pyscf 2.0.1
 
-**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`
 
 
-# To-Do and Issues:
+<!--**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`-->
 
-1. Currently there is no conflict detection for CliffordGate class. So users can assign conflicting Clifford map by using both `gate.set_generator()` and `gate.set_forward_map()`. We need to add a conflict detection.
+
+
 
 
 

@@ -15,6 +15,8 @@ pyclifford.egg-info/top_level.txt
 pyclifford/tests/__init__.py
 pyclifford/tests/test_paulialg.py
 pyclifford/tests/test_stabilizer.py
+pycliffordext/__init__.py
+pycliffordext/qchem.py
 torchclifford/__init__.py
 torchclifford/circuit.py
 torchclifford/paulialg.py

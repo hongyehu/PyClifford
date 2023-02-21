@@ -1,2 +1,3 @@
 pyclifford
+pycliffordext
 torchclifford
