@@ -14,10 +14,10 @@ Also, there are several application shows cases below that are helpful.
 ## Application show cases:
 <img src="/doc/show_cases.png" alt="Alt text" height="400" width="570">
 
- 1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group (*Condensed Matter Physics*) [Link](/dev)
- 2. Measurement induced phase transition (*Condensed Matter Physics/Quantum Error Correction*)
- 3. Classical shadow tomography with shallow layers (*Quantum Computation & Information*)
- 4. Clifford ansatz for quantum chemistry (*Quantum Computation & Quantum Chemistry*)
+ 1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group (*Condensed Matter Physics*) [Link](/doc/SBRG.ipynb)
+ 2. Measurement induced phase transition (*Condensed Matter Physics/Quantum Error Correction*) [Link](/dev/demo-MIPT.ipynb)
+ 3. Classical shadow tomography with shallow layers (*Quantum Computation & Information*) [Link](/dev/demo-CST.ipynb)
+ 4. Clifford ansatz for quantum chemistry (*Quantum Computation & Quantum Chemistry*) [Link](/dev/demo-QChem.ipynb)
 
 ## Dependence of `PyClifford`:
 - Numba
