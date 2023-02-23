@@ -22,7 +22,7 @@ This is a `python` based clifford circuit simulation package which not only offe
 - Numpy
 - QuTip
 - Matplotlib
-### Dependence of `PyClifford` Quantum Chemistry:
+### Dependence of `PyCliffordExt` Quantum Chemistry:
 - Qiskit 0.39.4
 - Pyscf 2.0.1
 
