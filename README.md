@@ -19,6 +19,13 @@ Also, there are several application shows cases below that are helpful.
  3. Classical shadow tomography with shallow layers (*Quantum Computation & Information*) [Link](/dev/demo-CST.ipynb)
  4. Clifford ansatz for quantum chemistry (*Quantum Computation & Quantum Chemistry*) [Link](/dev/demo-QChem.ipynb)
 
+## Structure of `PyClifford`:
+The structure of `PyClifford` is illustrated below. Pauli strings, stabilizer states, and Clifford maps are represented by binary or integer strings. All the low-level calculation is in the `utils.py` with JIT compliation. Then `paulialg.py` handles all the Pauli algebra and manipulation of Pauli string lists. On top of that, we have built `stabilizer.py` to handle stabilizer states and Clifford maps. Finally, `circuit.py` gives user an easy access to all the functions.
+
+In addition, we are interested in developing `PyCliffordExt` as an extension to `PyClifford`, where we would like to include few-T gate into the package. If you are interested in its physics or contributing to the code, please feel free to [contact us](https://scholar.harvard.edu/hongyehu/home)!
+
+<img src="/doc/structure_of_code.png" alt="Alt text" height="280" width="399">
+
 ## Dependence of `PyClifford`:
 - Numba
 - Numpy
