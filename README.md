@@ -16,7 +16,7 @@ Also, there are several application shows cases below that are helpful.
   > "*PyClifford is an exceptional tool that offers researchers in quantum condensed matter a wide range of capabilities, including an intuitive programming language for simulating and analyzing Clifford circuits, quantum measurement, and evaluation of entanglement quantities, all of which are crucial in advancing our understanding of the quantum world. Its continuous updates and enhancements by a well-coordinated team of experts make it a reliable and powerful resource that can keep pace with the latest research developments and drive new discoveries in the field.*"
 
 ## Application show cases:
-<img src="/doc/show_cases.png" alt="Alt text" height="400" width="570">
+<img src="/doc/show_cases.png" alt="Alt text" height="400" width="560">
 
 (We are still working on making detailed examples in those jupyter notebooks)
  1. Solving strong disordered Hamiltonian by Spectrum Bifurcation Renormalization Group (*Condensed Matter Physics*) [Link](/doc/SBRG.ipynb)
