@@ -9,7 +9,7 @@
 
 This is a `python` based clifford circuit simulation package which not only offers the fast simulation but also supports analytical level manipulation of pauli operators and stabilizer states. And we are working on quantum circuit (strong/weak) simulations that include a few T-gates. To get started, in [PyClifford Jupyter Book](https://hongyehu.github.io/PyCliffordPages/intro.html), we have made several jupyter notebooks to illustrate the basics of PyClifford.
 
-Installation of PyClifford also installs `TorchClifford` a parallel package that contains the same functionality but in a vectorized and GPU-friendly format. To use TorchClifford,simply `import torchclifford` rather than `import pyclifford`.
+Installation of PyClifford also installs `TorchClifford` a parallel package that contains the same functionality but in a vectorized and GPU-friendly format. To use TorchClifford, simply `import torchclifford` rather than `import pyclifford`.
 
 Also, there are several application shows cases below that are helpful.
 
