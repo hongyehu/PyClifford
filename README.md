@@ -43,6 +43,8 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 - Qiskit 0.39.4
 - Pyscf 2.0.1
 
+## What will in the next release (Mid-March): 
+- Quantum Error Correction and Noisy Circuit
 
 
 <!--**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`-->
