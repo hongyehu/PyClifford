@@ -63,7 +63,7 @@ class CliffordMap(PauliList):
     def inverse(self):
         '''Returns the inverse of this Clifford map, (such that it composes with
         its inverse results in identity map).'''
-        gs_inv = z2inv(self.gs.cpu().numpy()).to(self.gs.device)
+        gs_inv = torch.tensor(z2inv(self.gs.cpu().numpy()), device=self.gs.device)
         gs_iden, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
         ps_inv = (- ps_mis - ps0(gs_inv))%4
         return CliffordMap(gs_inv, ps_inv)
@@ -283,8 +283,8 @@ def ghz_state(N, device='cpu'):
     objs.append(pauli([1]*N, device=device))
     return stabilizer_state(paulis(objs, device=device))
 
-def random_pauli_state(N, r=None):
-    return random_pauli_map(N).to_state(r)
+def random_pauli_state(N, r=None, device='cpu'):
+    return random_pauli_map(N, device=device).to_state(r)
 
 def random_clifford_state(N, r=None, device='cpu'):
     return random_clifford_map(N, device=device).to_state(r)

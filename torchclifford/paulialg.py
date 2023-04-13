@@ -221,8 +221,10 @@ class PauliList(object):
             self.gs, self.ps = pauli_transform(self.gs, self.ps, 
                 clifford_map.gs, clifford_map.ps)
         else:
-            mask = numpy.array(mask, dtype=bool)
-            mask2 = numpy.repeat(mask, 2)
+            #mask = numpy.array(mask.cpu(), dtype=bool)
+            ### mask2 = numpy.repeat(mask, 2)
+            mask = mask.to(bool)
+            mask2 = torch.repeat_interleave(mask, 2)
             self.gs[:,mask2], self.ps = pauli_transform(
                 self.gs[:,mask2], self.ps, clifford_map.gs, clifford_map.ps)
         return self
