@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from numba import njit
 
 
 def front(g):
@@ -46,13 +47,14 @@ def acq_grid(g1, g2):
     return (torch.matmul(gz1, gx2.T) - torch.matmul(gx1, gz2.T)) % 2
 
 
+@torch.jit.script
 def ipow(g1,g2):
     N2 = g1.shape[-1]
     g1x, g1z = g1[...,::2], g1[...,1::2]
     g2x, g2z = g2[...,::2], g2[...,1::2]
     gx = g1x + g2x
     gz = g1z + g2z
-    return torch.sum(g1z * g2x - g1x * g2z + 2*(torch.div(gx, 2, rounding_mode='floor') * gz + gx * torch.div(gz, 2, rounding_mode='floor')), axis=-1) % 4
+    return torch.sum(g1z * g2x - g1x * g2z + 2*(torch.div(gx, 2, rounding_mode='floor') * gz + gx * torch.div(gz, 2, rounding_mode='floor')), dim=-1) % 4
 
 
 def ipow_product(g1,g2):
@@ -68,13 +70,14 @@ def ipow_product(g1,g2):
     return torch.sum(g1z * g2x - g1x * g2z + 2*(torch.div(gx, 2, rounding_mode='floor') * gz + gx * torch.div(gz, 2, rounding_mode='floor')), axis=-1) % 4
 
 
+@torch.jit.script
 def ps0(gs):
     '''Bare phase factor due to x.z for Pauli strings.
     Parameters:
     gs: int (L,2*N) - array of Pauli strings in binary repr.
     Returns:
     ps0: int (L) - bare phase factor x.z for all strings.'''
-    return torch.sum(gs[...,::2] * gs[...,1::2], axis=-1) % 4
+    return torch.sum(gs[...,::2] * gs[...,1::2], dim=-1) % 4
 
 
 def acq_mat(gs):
@@ -280,7 +283,7 @@ def random_pair(N, L=1, device='cpu'):
     while (g1 == 0).all(): # resample g1 if it is all zero
         g1 = torch.randint(0, 2, (L, 2*N), device=device)
     g1, g2 = impose_leading_noncommutivity(g1, g2)
-    return g1.squeeze(0), g2.squeeze(0)
+    return g1.squeeze(0).to(torch.float32), g2.squeeze(0).to(torch.float32)
 
 
 def impose_leading_noncommutivity(g1, g2):
@@ -294,13 +297,13 @@ def impose_leading_noncommutivity(g1, g2):
     return g1, g2
 
 
-def random_pauli(N):
+def random_pauli(N, device='cpu'):
     '''Sample a random Pauli map.
     Parameters:
     N: int - number of qubits.
     Returs:
     gs: int (2*N, 2*N) - random Pauli map matrix.'''
-    g1, g2 = random_pair(1, N)
+    g1, g2 = random_pair(1, N, device=device)
     return build_pauli_map(N, g1, g2)
 
 
@@ -416,7 +419,8 @@ def stabilizer_project(gs_stb, gs_obs, r):
     return gs_stb, r
 
 
-def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r, samples=None):
+@torch.jit.script
+def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r, samples=torch.tensor(0)):
     '''Measure Pauli operators on a stabilizer state.
     Parameters:
     gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
@@ -431,22 +435,24 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r, samples=None):
     out: int (L) - measurment outcomes (0 or 1 binaries).
     log2prob: real - log2 probability of this outcome.'''
     (L, Ng), device = gs_obs.shape, gs_stb.device
-    N, log2prob, out, indices = Ng//2, 0, torch.zeros(L, dtype=torch.float32, device=device), torch.arange(Ng, device=device)
+    N, log2prob, out, indices, k = Ng//2, 0, torch.zeros(L, dtype=torch.float32, device=device), torch.arange(Ng, device=device), 0
     ps_stb = ps_stb[0:N]
-    if samples is None:
+    if torch.allclose(samples, torch.tensor(0)):
         samples = torch.randint(0, 2, (L,), device=device)
     assert 0<=r<=N
     for k in range(L): # for each observable gs_obs[k]
         update = torch.zeros(Ng, dtype=torch.bool, device=device)
         acqs = acq(gs_stb, gs_obs[k]).to(torch.bool)
-        p = torch.logical_and(acqs, indices<N+r).nonzero()
-        if p.shape[0] > 0:
-            p = p[0].item()
+        p_temp = torch.logical_and(acqs, indices<N+r).nonzero()
+        if p_temp.shape[0] > 0:
+            p = torch.tensor(p_temp[0].item(), dtype=torch.long)
             update[p+1::] = True
             p2 = torch.logical_and(acqs, update).nonzero().flatten()
             p1 = torch.logical_and(torch.logical_and(acqs, indices<N), update).nonzero().flatten()
             ps_stb = ps_stb.scatter(-1, p1, (ps_stb[p1] + ps_stb[p] + ipow(gs_stb[p1], gs_stb[p]))%4)
             gs_stb[p2] = (gs_stb[p2] + gs_stb[p])%2
+        else:
+            p = p_temp.to(torch.long)
         temp_acqs = torch.logical_and(torch.logical_and(acqs,  ~update), ~(indices<N+r))
         temp_acqs = torch.roll(temp_acqs, shifts=(-N), dims=(0))
         ga = torch.cumsum(temp_acqs.unsqueeze(-1)*torch.cat((ps_stb, ps_stb)).unsqueeze(0), dim=-1) % 2
@@ -468,29 +474,57 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r, samples=None):
                 p = r
             ps_stb[p] = 2 * samples[k]
             out[k] = torch.div((ps_stb[p] - ps_obs[k])%4, 2, rounding_mode='trunc') #0->0(+1 eigenvalue), 2->1(-1 eigenvalue)
-            log2prob -= 1.
+            log2prob -= 1
         else:
             out[k] = torch.div((pa - ps_obs[k])%4, 2, rounding_mode='trunc')
     return gs_stb, ps_stb, r, out, log2prob
 
 
 def stabilizer_expect(gs_stb, ps_stb, gs_obs, ps_obs, r):
-    (L, Ng), ps_stb, device = gs_obs.shape, torch.cat((ps_stb, ps_stb)), gs_stb.device
-    N, indices, xs = Ng//2, torch.arange(Ng, device=device).view(1, -1).repeat(L, 1), torch.zeros(L, dtype=torch.float32, device=device)
-    ps_stb = ps_stb[0:Ng]
-    gs_stb, gs_obs = gs_stb.to(torch.float32), gs_obs.to(torch.float32)
+    '''Evaluate the expectation values of Pauli operators on a stabilizer state.
+    Parameters:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    gs_obs: int (L, 2*N) - strings of Pauli operators to be measured.
+    ps_obs: int (L) - phase indicators of Pauli operators to be measured.
+    r: int - log2 rank of density matrix (num of standby stablizers).
+    Returns:
+    xs: int (L) - expectation values of Pauli operators.'''
+    (L, Ng) = gs_obs.shape
+    N = Ng//2
+    device = gs_obs.device
     assert 0<=r<=N
-
-    acqs = acq_grid(gs_stb, gs_obs).T
-    ps = torch.logical_and(acqs.to(torch.bool), indices<N+r)
-    ps = torch.logical_and(torch.argmax(1*ps , dim=1)==0, ~ps[:, 0])
-    acqs = torch.roll(acqs, shifts=(N), dims=(1))
-    ga = torch.cumsum(acqs.unsqueeze(-1)*gs_stb.unsqueeze(0), dim=-1) % 2
-    pas = torch.sum(ps_stb.unsqueeze(0)*acqs + ipow(ga, ga), dim=1) % 4
-    xs[ps] = (-1)**torch.div((pas[ps] - ps_obs[ps])%4, 2, rounding_mode='floor')
+    xs = torch.zeros(L, dtype=torch.float32, device=device) # expectation values
+    ga = torch.zeros(2*N, dtype=torch.float32, device=device) # workspace for stabilizer accumulation
+    for k in range(L): # for each observable gs_obs[k]
+        ga[:] = 0
+        pa, trivial = 0, True
+        for j in range(Ng):
+            if acq(gs_stb[j], gs_obs[k]):
+                if j < N + r: # if gs_stb[j] is active stablizer or standby.
+                    xs[k] = 0 # gs_obs[k] is logical or error operator.
+                    trivial = False # gs_obs[k] is not trivial
+                    break
+                else: # accumulate stablizer components
+                    pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
+                    ga = (ga + gs_stb[j-N])%2
+        if trivial:
+            xs[k] = (-1)**torch.div(((pa - ps_obs[k])%4), 2, rounding_mode='floor')
     return xs
 
 
+def z2rank(mat):
+    '''Calculate Z2 rank of a binary matrix.
+    Parameters:
+    mat: int matrix - input binary matrix.
+        caller must ensure that mat contains only 0 and 1.
+        mat is destroyed upon output!
+    Returns:
+    r: int - rank of the matrix under Z2 algebra.'''
+    return torch.linalg.matrix_rank(mat.to(torch.float32))
+
+
+@torch.jit.script
 def stabilizer_entropy(gs, mask):
     '''Entanglement entropy of the stabilizer state in a given region.
     Parameters:
@@ -565,17 +599,7 @@ def aggregate(data_in, inds, l):
     return torch.zeros(l, dtype=data_in.dtype, device=data_in.device).index_add_(-1, inds, data_in)
 
 
-def z2rank(mat):
-    '''Calculate Z2 rank of a binary matrix.
-    Parameters:
-    mat: int matrix - input binary matrix.
-        caller must ensure that mat contains only 0 and 1.
-        mat is destroyed upon output! 
-    Returns:
-    r: int - rank of the matrix under Z2 algebra.'''
-    return torch.linalg.matrix_rank(mat.to(torch.float32))
-
-
+@njit
 def z2inv(mat):
     '''
     Calculate Z2 inversion of a binary matrix.
@@ -613,8 +637,7 @@ def z2inv(mat):
         for j in range(i):
             if a[j, i]: # a[j, i] nonzero
                 a[j, i:] = (a[j, i:] + a[i, i:])%2
-    #return torch.tensor(a[:,n:])
-    return torch.tensor(a[:,n:])
+    return a[:,n:]
 
 
 def stabilizer_projection_trace(gs_stb, ps_stb, gs_obs, ps_obs, r):

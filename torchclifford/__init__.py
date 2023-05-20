@@ -7,3 +7,4 @@ from .circuit import(
     clifford_rotation_gate,
     identity_circuit, brickwall_rcc, onsite_rcc, global_rcc,
     diagonalize)
+from .utils import(acq)

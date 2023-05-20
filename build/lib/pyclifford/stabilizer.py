@@ -1,10 +1,11 @@
 import numpy
 import qutip as qt
+from numba import njit
 from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
     stabilizer_project, stabilizer_measure, stabilizer_expect, 
-    stabilizer_entropy, mask, stabilizer_projection_trace)
+    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
@@ -130,6 +131,15 @@ class StabilizerState(PauliList):
         self.gs, self.ps, self.r, out, log2prob = stabilizer_measure(
             self.gs, self.ps, obs.gs, obs.ps, self.r)
         return out, log2prob
+    def postselect(self, paulistring, postselect_res):
+        '''
+        paulistring: is the measurement
+        postselect_res: is the post-selection result. 0 means (+1), 1 means (-1)
+        '''
+        if self.r != 0:
+            raise ValueError("Currently, post-selection is only supported with pure states")
+        self.gs, self.ps, prob = stabilizer_postselection(self.gs, self.ps, paulistring.g, int(postselect_res*2))
+        return prob
 
     def expect(self, obs):
         '''Evaluate expectation values of observables on the statilizer state.
@@ -189,7 +199,6 @@ class StabilizerState(PauliList):
         C = numpy.random.randint(2, size=(L,self.N-self.r))
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
-
     def get_prob(self, readout):
         '''
         Evaluate the probability of getting a bit string readout
@@ -279,7 +288,9 @@ def zero_state(N):
     return identity_map(N).to_state()
 
 def one_state(N):
-    return -zero_state(N)
+    gs = zero_state(N).gs
+    ps = (2*numpy.ones(2*N)).astype(int)
+    return StabilizerState(gs = gs,ps = ps)
 
 def ghz_state(N):
     objs = [pauli({i:3,i+1:3},N) for i in range(N-1)]
@@ -292,3 +303,14 @@ def random_pauli_state(N, r=None):
 def random_clifford_state(N, r=None):
     return random_clifford_map(N).to_state(r)
 
+@njit
+def random_bit_state_gs_ps(N):
+    gs = numpy.zeros((2*N,2*N))
+    for i in range(N):
+        gs[i,2*i+1]=1
+        gs[N+i,2*i]=1
+    ps = numpy.random.choice(numpy.array([0,2]),size = 2*N)
+    return gs, ps
+def random_bit_state(N):
+    gs, ps = random_bit_state_gs_ps(N)
+    return StabilizerState(gs = gs.astype(int), ps = ps)
