@@ -124,7 +124,7 @@ class Pauli(object):
         return self
 
     def tokenize(self):
-        gs = numpy.expand_dim(self.g, 0)
+        gs = numpy.expand_dims(self.g, 0)
         ps = numpy.array([self.p])
         return pauli_tokenize(gs, ps)
     def to_qutip(self):
@@ -514,5 +514,3 @@ def pauli_identity(N):
 def pauli_zero(N):
     '''Pauli polynomial of zero operator of N qubit'''
     return 0 * pauli_identity(N)
-
-
