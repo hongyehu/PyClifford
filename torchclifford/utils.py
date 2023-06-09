@@ -512,6 +512,38 @@ def stabilizer_expect(gs_stb, ps_stb, gs_obs, ps_obs, r):
             xs[k] = (-1)**torch.div(((pa - ps_obs[k])%4), 2, rounding_mode='floor')
     return xs
 
+def vectorizable_stabilizer_expect(gs_stb, ps_stb, gs_obs, ps_obs, r):
+    '''Vectorizable version for evaluating the expectation values of Pauli operators on a stabilizer state.
+    Note: these stabilizer states have to have the same rank.
+    Args:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    gs_obs: int (L, 2*N) - strings of Pauli operators to be measured.
+    ps_obs: int (L) - phase indicators of Pauli operators to be measured.
+    r: int - log2 rank of density matrix (num of standby stablizers).
+    Returns:
+    xs: int (L) - expectation values of Pauli operators.'''
+    (L, Ng) = gs_obs.shape # L: number of observables, Ng: number of stabilizers + de-stabilizers
+    N = Ng//2
+    device = gs_obs.device
+    ga = torch.zeros((L, Ng, Ng), dtype=torch.float32, device=device) # workspace for stabilizer accumulation
+    pa = torch.zeros_like(gs_obs, dtype=torch.float32, device=device) 
+    mask_stabilizer = torch.concat(
+        [torch.full((L, N+r), 0, dtype=torch.int8), torch.full((L, N-r), 1, dtype=torch.int8)], 
+        dim=1) # mask for active stablizer or standby
+    # step 0: compute the (anti)-commutation table        
+    acq_table = torch.t(acq_grid(gs_stb, gs_obs))
+    # step 1: compute table for stabilizer accumulation
+    for k in range(L):
+        for j in range(Ng):
+            # the following lines cannot be vmapped, see issue here: https://github.com/pytorch/pytorch/issues/103329
+            pa[k, j] = (
+                pa[k, j-1] + acq_table[k, j] * mask_stabilizer[k, j] * (ps_stb[j-N] + ipow(ga[k, j-1], gs_stb[j-N]))) % 4            
+            ga[k, j] = (
+                ga[k, j-1] + acq_table[k, j] * mask_stabilizer[k, j] * gs_stb[j-N]) % 2 # two masks are used, one for commutation, one for stabilizer
+    # step 2: compute xs using "trivial" formula
+    xs = (-1)**torch.div(((pa[:, -1] - ps_obs)%4), 2, rounding_mode='floor')
+    return xs * torch.prod((acq_table[..., :N+r] + 1) % 2, dim=1) # take the ones that are "trivial" to compute; set others to 0.
 
 def z2rank(mat):
     '''Calculate Z2 rank of a binary matrix.

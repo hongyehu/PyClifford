@@ -4,7 +4,7 @@ import qutip as qt
 from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
-    stabilizer_project, stabilizer_measure, stabilizer_expect, 
+    stabilizer_project, stabilizer_measure, stabilizer_expect, vectorizable_stabilizer_expect,
     stabilizer_entropy, mask, stabilizer_projection_trace)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
@@ -288,3 +288,41 @@ def random_pauli_state(N, r=None, device='cpu'):
 
 def random_clifford_state(N, r=None, device='cpu'):
     return random_clifford_map(N, device=device).to_state(r)
+
+# --- vectorized state expectations ---
+def vectorizable_expct(states, obs):
+    '''Evaluate expectation values of observables in parallel on a list of statilizer state.
+    Args:
+    states: (List(StabilizerState)) stablilizer states to compute expectation values for.
+    obs: observable, can be Pauli, PauliList, PauliPolynomial, StabilizerState
+    Returns:
+    out: output (depending on the type of obs)
+        * Pauli: promote to PauliPolynomial
+        * PauliPolynomial O: Tr(rho O z^|O|)
+        * StabilizerState sigma: Tr(rho sigma)
+        * PauliList [O_i]: [Tr(rho O_i z^|O_i|)]
+    '''
+    if isinstance(obs, Pauli):
+        return vectorizable_expct(states, obs.as_polynomial()) # cast Pauli to PauliPolynomial
+    elif isinstance(obs, PauliPolynomial):
+        xs = vectorizable_expct(states, PauliList(obs.gs, obs.ps)) # cast PauliPolynomial to PauliList
+        return torch.sum(obs.cs * xs, dim=-1)
+    elif isinstance(obs, StabilizerState):
+        NotImplementedError("Will be added in the next release!")
+    elif isinstance(obs, PauliList):
+        gs_stb_batched = torch.stack([state.gs for state in states])
+        ps_stb_batched = torch.stack([state.ps for state in states])
+        gs_obs = obs.gs
+        ps_obs = obs.ps
+        rs = numpy.array([state.r for state in states])
+        assert numpy.all(numpy.equal(rs, rs[0])) # need to ensure the batched states have the same rank r
+        r = rs[0]
+        assert 0 <= r <= gs_stb_batched.shape[-1] # require the rank to be physical
+        # vmap currently blocked by issue: https://github.com/pytorch/pytorch/issues/103329
+        # vectorizable_stabilizer_expect_r = functools.partial(vectorizable_stabilizer_expect, r=r) # fix r
+        # batched_stabilizer_expect = torch.vmap(vectorizable_stabilizer_expect_r, in_dims=(0,0, None, None), out_dims=0)
+        # return batched_stabilizer_expect(gs_stb_batched, ps_stb_batched, gs_obs, ps_obs)        
+        return torch.stack(
+            [vectorizable_stabilizer_expect(gs_stb_batched[i], ps_stb_batched[i], gs_obs, ps_obs, r) for i in range(len(states))])
+    else:
+        raise "`obs` type is not supported."
