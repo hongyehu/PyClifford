@@ -13,6 +13,13 @@ Installation of PyClifford also installs `TorchClifford` a parallel package that
 
 Also, there are several application shows cases below that are helpful.
 
+## :fire: New Feature :fire:
+
+**We're excited to introduce our latest feature!:** :sparkles: 
+- Noisy circuit simulation of classical shadows
+- One-line calculation of Pauli weight used for classical post-processing. (Tensor network based algorithm)
+
+
 ## Quotes from our first few users:
  - Prof. Zhen Bi (Pappalardo Fellow 17'@MIT, Assistant Professor@PennState): 
   > "*PyClifford is an exceptional tool that offers researchers in quantum condensed matter a wide range of capabilities, including an intuitive programming language for simulating and analyzing Clifford circuits, quantum measurement, and evaluation of entanglement quantities, all of which are crucial in advancing our understanding of the quantum world. Its continuous updates and enhancements by a well-coordinated team of experts make it a reliable and powerful resource that can keep pace with the latest research developments and drive new discoveries in the field.*"
