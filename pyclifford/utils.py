@@ -690,44 +690,6 @@ def stabilizer_entropy(gs, mask):
         entropy = numpy.sum(mask) - strict - hidden
     return entropy
 
-# ---- Z2 linear algebra ----
-@njit
-def z2rank(mat):
-    '''Calculate Z2 rank of a binary matrix.
-
-    Parameters:
-    mat: int matrix - input binary matrix.
-        caller must ensure that mat contains only 0 and 1.
-        mat is destroyed upon output! 
-
-    Returns:
-    r: int - rank of the matrix under Z2 algebra.'''
-    nr, nc = mat.shape # get num of rows and cols
-    r = 0 # current row index
-    for i in range(nc): # run through cols
-        if r == nr: # row exhausted first
-            return r # row rank is full, early return
-        if mat[r, i] == 0: # need to find pivot
-            found = False # set a flag
-            for k in range(r + 1, nr):
-                if mat[k, i]: # mat[k, i] nonzero
-                    found = True # pivot found in k
-                    break
-            if found: # if pivot found in k
-                # swap rows r, k
-                for j in range(i, nc):
-                    tmp = mat[k,j]
-                    mat[k,j] = mat[r, j]
-                    mat[r,j] = tmp
-            else: # if pivot not found
-                continue # done with this col
-        # pivot has moved to mat[r, i], perform GE
-        for j in range(r + 1, nr):
-            if mat[j, i]: # mat[j, i] nonzero
-                mat[j, i:] = (mat[j, i:] + mat[r, i:])%2
-        r = r + 1 # rank inc
-    # col exhausted, last nonvanishing row indexed by r
-    return r
 
 @njit
 def z2inv(mat):
@@ -978,3 +940,101 @@ def stabilizer_postselection(gs_stb, ps_stb, gs_ob, ps_ob):
         if not pa == ps_ob:
             prob = 0.
     return gs_stb, ps_stb, prob
+
+# ---- Z2 linear algebra ----
+@njit
+def z2rank(mat):
+    '''Calculate Z2 rank of a binary matrix.
+
+    Parameters:
+    mat: int matrix - input binary matrix.
+        caller must ensure that mat contains only 0 and 1.
+        mat is destroyed upon output! 
+
+    Returns:
+    r: int - rank of the matrix under Z2 algebra.'''
+    nr, nc = mat.shape # get num of rows and cols
+    r = 0 # current row index
+    for i in range(nc): # run through cols
+        if r == nr: # row exhausted first
+            return r # row rank is full, early return
+        if mat[r, i] == 0: # need to find pivot
+            found = False # set a flag
+            for k in range(r + 1, nr):
+                if mat[k, i]: # mat[k, i] nonzero
+                    found = True # pivot found in k
+                    break
+            if found: # if pivot found in k
+                # swap rows r, k
+                for j in range(i, nc):
+                    tmp = mat[k,j]
+                    mat[k,j] = mat[r, j]
+                    mat[r,j] = tmp
+            else: # if pivot not found
+                continue # done with this col
+        # pivot has moved to mat[r, i], perform GE
+        for j in range(r + 1, nr):
+            if mat[j, i]: # mat[j, i] nonzero
+                mat[j, i:] = (mat[j, i:] + mat[r, i:])%2
+        r = r + 1 # rank inc
+    # col exhausted, last nonvanishing row indexed by r
+    return r
+
+def rref_canonicalization(gs, ps):
+    '''Row reduced echelon form (RREF) canonicalization of stabilizer tableau.
+    
+    Parameters:
+    gs: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps: int (2*N) - phase indicators of (de)stabilizers.
+    
+    Returns:
+    gs: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
+    ps: int (2*N) - phase indicators of (de)stabilizers.
+    '''
+    (L, Ng) = gs.shape
+    N = Ng//2
+    assert L == 2*N
+    # prepare workspace
+    gs = gs.copy()
+    ps = ps.copy()
+    # rref
+    r = 0 # current row index
+    for i in range(2*N): # run through cols
+        if r == N: # row exhausted first
+            return gs, ps # row rank is full, early return
+        if gs[r, i] == 0: # need to find pivot
+            found = False # set a flag
+            for k in range(r + 1, N):
+                if gs[k, i]: # mat[k, i] nonzero
+                    found = True # pivot found in k
+                    break
+            if found: # if pivot found in k
+                # swap rows r, k, the stabilizer part
+                for j in range(i, 2*N):
+                    tmp = gs[k,j]
+                    gs[k,j] = gs[r, j]
+                    gs[r,j] = tmp
+                # swap the destabilizer part
+                for j in range(i, 2*N):
+                    tmp = gs[k+N,j]
+                    gs[k+N,j] = gs[r+N, j]
+                    gs[r+N,j] = tmp
+                # swap the phase part (stabilizer)
+                tmp = ps[k]
+                ps[k] = ps[r]
+                ps[r] = tmp
+                # swap the phase part (destabilizer)
+                tmp = ps[k+N]
+                ps[k+N] = ps[r+N]
+                ps[r+N] = tmp
+            else: # if pivot not found
+                continue # done with this col
+        # pivot has moved to mat[r, i], perform GE
+        for j in range(r + 1, N):
+            if gs[j, i]: # mat[j, i] nonzero
+                gs[j, i:] = (gs[j, i:] + gs[r, i:])%2
+                gs[j+N, i:] = (gs[j+N, i:] + gs[r+N, i:])%2
+                ps[j] = (ps[j] + ps[r])%4
+                ps[j+N] = (ps[j+N] + ps[r+N])%4
+        r = r + 1 # rank inc
+    return gs, ps
