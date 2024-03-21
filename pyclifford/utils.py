@@ -1034,7 +1034,7 @@ def rref_canonicalization(gs, ps):
             if gs[j, i]: # mat[j, i] nonzero
                 gs[j, i:] = (gs[j, i:] + gs[r, i:])%2
                 gs[j+N, i:] = (gs[j+N, i:] + gs[r+N, i:])%2
-                ps[j] = (ps[j] + ps[r])%4 # add ipow
-                ps[j+N] = (ps[j+N] + ps[r+N])%4 # add ipow
+                ps[j] = (ps[j] + ps[r]+ipow(gs[j,:],gs[r,:]))%4 # add ipow
+                ps[j+N] = (ps[j+N] + ps[r+N]+ipow(gs[j+N,:],gs[r+N]))%4 # add ipow
         r = r + 1 # rank inc
     return gs, ps
