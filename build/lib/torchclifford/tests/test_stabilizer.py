@@ -4,7 +4,7 @@ import scipy
 import qutip
 
 from ..stabilizer import *
-from ..paulialg import pauli, paulis
+from ..paulialg import pauli, paulis, Pauli, PauliList, PauliPolynomial
 
 
 device = 'cpu'
@@ -330,3 +330,18 @@ def test_sample():
             output_operator = np.kron(output_operator, one_hot_to_pauli(output_op))
         output_operator = torch.tensor(output_operator) * 1j**phase
         assert np.allclose(output_a, np.matmul(output_operator, output_a)) or np.allclose(output_a, -np.matmul(output_operator, output_a))
+
+def test_batched_pauli_exp():
+  """Test that batched expectation values are correct compared to single expectation values."""
+  np.random.seed(0) # set seed for reproducibility 
+  random_states = [random_clifford_state(3) for _ in range(100)] #TODO: random seed for stabilizer.random_clifford_state()?
+  obs_types = [
+    paulis(pauli([np.random.randint(0,4) for _ in range(3)]), 
+    pauli([np.random.randint(0,4) for _ in range(3)])), # random pauli operator, as PolyList
+    paulis('XXX','IZI','-ZZI'), # PauliList of higher length
+    0.5*pauli('XXX')+0.2j*pauli('-ZZI') # Polynomials
+  ]
+  for obs in obs_types: # tests for each type of obs
+    expected = np.stack([state.expect(obs) for state in random_states])  
+    actual = vectorizable_expct(random_states, obs)
+    np.testing.assert_allclose(actual, expected) 
