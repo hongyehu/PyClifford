@@ -980,6 +980,7 @@ def z2rank(mat):
     # col exhausted, last nonvanishing row indexed by r
     return r
 
+@njit
 def rref_canonicalization(gs, ps):
     '''Row reduced echelon form (RREF) canonicalization of stabilizer tableau.
     
