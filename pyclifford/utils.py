@@ -1034,17 +1034,24 @@ def rref_canonicalization(gs, ps):
         for j in range(r + 1, N):
             if gs[j, i]: # mat[j, i] nonzero
                 gs[j, i:] = (gs[j, i:] + gs[r, i:])%2
-                # gs[j+N, i:] = (gs[j+N, i:] + gs[r+N, i:])%2
+                gs[r+N, :] = (gs[r+N, :] + gs[j+N, :])%2
                 ps[j] = (ps[j] + ps[r]+ipow(gs[j,:],gs[r,:]))%4 # add ipow
-                # ps[j+N] = (ps[j+N] + ps[r+N]+ipow(gs[j+N,:],gs[r+N]))%4 # add ipow
+                ps[r+N] = (ps[r+N] + ps[j+N]+ipow(gs[j+N,:],gs[r+N]))%4 # add ipow
         r = r + 1 # rank inc
     return gs, ps
 
-# @njit
-# def swap(gs, ps, i, j):
-#     '''
-#     gs, and ps are swapped at i and j
-#     '''
-#     (L, Ng) = gs.shape
-#     N = Ng//2
-#     assert L == 2*N
+@njit
+def swap(gs, ps, i, j):
+    '''
+    gs, and ps are swapped at i and j
+    '''
+    (L, Ng) = gs.shape
+    N = Ng//2
+    assert L == 2*N
+    tmp = gs[:,2*i]
+    gs[:,2*i] = gs[:,2*j]
+    gs[:,2*j] = tmp
+    tmp = gs[:,2*i+1]
+    gs[:,2*i+1] = gs[:,2*j+1]
+    gs[:,2*j+1] = tmp
+    return gs, ps
