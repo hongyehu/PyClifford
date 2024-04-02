@@ -1039,3 +1039,12 @@ def rref_canonicalization(gs, ps):
                 # ps[j+N] = (ps[j+N] + ps[r+N]+ipow(gs[j+N,:],gs[r+N]))%4 # add ipow
         r = r + 1 # rank inc
     return gs, ps
+
+# @njit
+# def swap(gs, ps, i, j):
+#     '''
+#     gs, and ps are swapped at i and j
+#     '''
+#     (L, Ng) = gs.shape
+#     N = Ng//2
+#     assert L == 2*N
