@@ -5,7 +5,7 @@ from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
     stabilizer_project, stabilizer_measure, stabilizer_expect, 
-    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection)
+    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection,rref_canonicalization,swap)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
@@ -208,6 +208,21 @@ class StabilizerState(PauliList):
         readout_state = identity_map(self.N).to_state()
         readout_state.ps[:self.N]=readout
         return self.expect(readout_state)
+    def canonicalization(self,form="RREF"):
+        '''
+        Canonicalize the stabilizer state
+        '''
+        if form == "RREF":
+            self.gs, self.ps = rref_canonicalization(self.gs,self.ps)
+            return self
+        else:
+            raise NotImplementedError("Currently, only RREF form is supported")
+    def swap(self,i,j):
+        '''
+        Swap the stabilizer state
+        '''
+        self.gs, self.ps = swap(self.gs, self.ps, i, j)
+        return self
 
     # !!! this function has exponential complexity.
     @property

@@ -1048,10 +1048,27 @@ def swap(gs, ps, i, j):
     (L, Ng) = gs.shape
     N = Ng//2
     assert L == 2*N
-    tmp = gs[:,2*i]
+    tmp = gs[:,2*i].copy()
     gs[:,2*i] = gs[:,2*j]
     gs[:,2*j] = tmp
-    tmp = gs[:,2*i+1]
+    tmp = gs[:,2*i+1].copy()
     gs[:,2*i+1] = gs[:,2*j+1]
     gs[:,2*j+1] = tmp
     return gs, ps
+
+# @njit
+# def ptrace(gs,ps,r,k):
+#     '''
+#     the first k qubits are traced out
+#     '''
+#     (L, Ng) = gs.shape
+#     N = Ng//2
+#     assert L == 2*N
+#     gs = gs.copy()
+#     ps = ps.copy()
+#     for i in range(k):
+#         gs = numpy.delete(gs, 2*(N-i)-1, axis=0)
+#         gs = numpy.delete(gs, 2*(N-i)-1, axis=0)
+#         ps = numpy.delete(ps, N-i-1, axis=0)
+#         ps = numpy.delete(ps, N-i-1, axis=0)
+#     return gs, ps
