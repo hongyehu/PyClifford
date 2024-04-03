@@ -981,13 +981,13 @@ def z2rank(mat):
     return r
 
 @njit
-def rref_canonicalization(gs, ps):
+def rref_canonicalization(gs, ps, r=0):
     '''Row reduced echelon form (RREF) canonicalization of stabilizer tableau.
     
     Parameters:
     gs: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
     ps: int (2*N) - phase indicators of (de)stabilizers.
-    
+    r: rank of the density matrix (number of standby stabilizers).
     Returns:
     gs: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
     ps: int (2*N) - phase indicators of (de)stabilizers.
@@ -999,7 +999,8 @@ def rref_canonicalization(gs, ps):
     gs = gs.copy()
     ps = ps.copy()
     # rref
-    r = 0 # current row index
+    r = r
+    # r = 0 # current row index
     for i in range(2*N): # run through cols
         if r == N: # row exhausted first
             return gs, ps # row rank is full, early return
@@ -1056,19 +1057,31 @@ def swap(gs, ps, i, j):
     gs[:,2*j+1] = tmp
     return gs, ps
 
-# @njit
-# def ptrace(gs,ps,r,k):
-#     '''
-#     the first k qubits are traced out
-#     '''
-#     (L, Ng) = gs.shape
-#     N = Ng//2
-#     assert L == 2*N
-#     gs = gs.copy()
-#     ps = ps.copy()
-#     for i in range(k):
-#         gs = numpy.delete(gs, 2*(N-i)-1, axis=0)
-#         gs = numpy.delete(gs, 2*(N-i)-1, axis=0)
-#         ps = numpy.delete(ps, N-i-1, axis=0)
-#         ps = numpy.delete(ps, N-i-1, axis=0)
-#     return gs, ps
+@njit
+def ptrace(gs,ps,r,k):
+    '''
+    the first k qubits are traced out
+    '''
+    (L, Ng) = gs.shape
+    N = Ng//2
+    assert L == 2*N
+    new_gs = []
+    new_ds = []
+    new_phase_g = []
+    new_phase_d = []
+    for i in range(r,N):
+        if sum(gs[i,:2*k])==0:
+            new_gs.append(gs[i,2*k:])
+            new_phase_g.append(ps[i])
+            new_ds.append(gs[i+N,2*k:])
+            new_phase_d.append(ps[i+N])
+    current_stabilizer = len(new_gs)
+    new_gs_mat = numpy.zeros((2*(N-k),2*(N-k)),dtype=numpy.int_)
+    new_ps = numpy.zeros(2*(N-k),dtype=numpy.int_)
+    new_rank = N-k-current_stabilizer
+    for i in range(new_rank,N-k):
+        new_gs_mat[i] = new_gs[i-new_rank]
+        new_gs_mat[i+N-k] = new_ds[i-new_rank]
+        new_ps[i] = new_phase_g[i-new_rank]
+        new_ps[i+N-k] = new_phase_d[i-new_rank]
+    return new_gs_mat,new_ps,new_rank

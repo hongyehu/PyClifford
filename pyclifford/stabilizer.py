@@ -5,7 +5,7 @@ from .utils import (
     acq_mat, ps0, z2inv, pauli_combine, pauli_transform, binary_repr,
     random_pauli, random_clifford, map_to_state, state_to_map, clifford_rotate,
     stabilizer_project, stabilizer_measure, stabilizer_expect, 
-    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection,rref_canonicalization,swap)
+    stabilizer_entropy, mask, stabilizer_projection_trace,stabilizer_postselection,rref_canonicalization,swap,ptrace)
 from .paulialg import Pauli, PauliList, PauliPolynomial, pauli, paulis
 
 class CliffordMap(PauliList):
@@ -213,7 +213,7 @@ class StabilizerState(PauliList):
         Canonicalize the stabilizer state
         '''
         if form == "RREF":
-            self.gs, self.ps = rref_canonicalization(self.gs,self.ps)
+            self.gs, self.ps = rref_canonicalization(self.gs,self.ps,self.r)
             return self
         else:
             raise NotImplementedError("Currently, only RREF form is supported")
@@ -223,6 +223,14 @@ class StabilizerState(PauliList):
         '''
         self.gs, self.ps = swap(self.gs, self.ps, i, j)
         return self
+    def partial_trace(self,k):
+        '''
+        first k qubits are traced out
+        '''
+        self.gs, self.ps = rref_canonicalization(self.gs,self.ps,self.r)
+        new_gs_mat,new_ps,new_rank = ptrace(self.gs,self.ps,self.r,k)
+        return StabilizerState(new_gs_mat,new_rank,ps = new_ps)
+
 
     # !!! this function has exponential complexity.
     @property
