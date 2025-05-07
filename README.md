@@ -74,6 +74,61 @@ You should see output corresponding to the Pauli X operator! Congratulations! �
 - A new `examples` folder containing step-by-step examples.
 - Generalized stabilizer states that support non-Clifford gates.
 
+## 🧪 Simple first step: Creating a GHZ State 🧪
+
+Here's how to create a 4-qubit GHZ state using `PyClifford`:
+
+```python
+import pyclifford as pc
+
+# Create a 4-qubit quantum circuit
+N = 4
+circ = pc.Circuit(N)
+
+# Apply gates: H on qubit 0, then a chain of CNOTs
+circ.take(pc.H(0))
+circ.take(pc.CNOT(0, 1))
+circ.take(pc.CNOT(1, 2))
+circ.take(pc.CNOT(2, 3))
+
+# Initialize the |0000⟩ state
+state = pc.zero_state(N)
+
+# Apply the circuit
+state = circ.forward(state)
+
+# Print the final state
+print("State after circuit:", state)
+```
+
+Now, let's do a **mid-circuit** measurement!
+
+```python
+import pyclifford as pc
+
+# Create a 4-qubit quantum circuit
+N = 4
+circ = pc.Circuit(N)
+
+# Apply gates: H on qubit 0, then a chain of CNOTs
+circ.take(pc.H(0))
+circ.take(pc.CNOT(0, 1))
+circ.measure(1) # measure qubit-1 in z-basis
+circ.take(pc.H(1))
+circ.take(pc.CNOT(1, 2))
+circ.take(pc.CNOT(2, 3))
+
+# Initialize the |0000⟩ state
+state = pc.zero_state(N)
+
+# Apply the circuit
+state = circ.forward(state)
+
+# Print the final state
+print("State after circuit:", state)
+# Print mid-circuit measurement result
+print("mid-circuit measurement:", circ.measure_result)
+```
 
 ## 💬 Quotes from our first few users 💬:
  - Prof. Zhen Bi (Pappalardo Fellow 17'@MIT, Assistant Professor@PennState): 
