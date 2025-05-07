@@ -12,6 +12,8 @@ pyclifford.egg-info/SOURCES.txt
 pyclifford.egg-info/dependency_links.txt
 pyclifford.egg-info/requires.txt
 pyclifford.egg-info/top_level.txt
+pyclifford.egg-info/.ipynb_checkpoints/SOURCES-checkpoint.txt
+pyclifford.egg-info/.ipynb_checkpoints/requires-checkpoint.txt
 pyclifford/tests/__init__.py
 pyclifford/tests/test_paulialg.py
 pyclifford/tests/test_stabilizer.py
