@@ -793,7 +793,7 @@ def binary_repr(ints, width = None):
     Returns:
     new array where each integter is unpacked to binary subarray.
     '''
-    width = numpy.ceil(numpy.log2(numpy.max(ints)+1)).astype(numpy.int) if width is None else width
+    width = numpy.ceil(numpy.log2(numpy.max(ints)+1)).astype(int) if width is None else width
     dt0 = ints.dtype
     dt1 = numpy.dtype((dt0, [('bytes','u1',dt0.itemsize)]))
     bins = numpy.unpackbits(ints.view(dtype=dt1)['bytes'], axis=-1, bitorder='little')

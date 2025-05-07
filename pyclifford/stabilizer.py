@@ -204,7 +204,7 @@ class StabilizerState(PauliList):
         Evaluate the probability of getting a bit string readout
         '''
         if self.N != readout.shape[0]:
-            raise Error("readout is incompitile with system size!")
+            raise ValueError("readout is incompitile with system size!")
         readout_state = identity_map(self.N).to_state()
         readout_state.ps[:self.N]=readout
         return self.expect(readout_state)
