@@ -14,7 +14,7 @@ This is a `python` based Clifford circuit simulation package that not only offer
 
 Also, there are several application show cases below that are helpful.
 
-## 🛠️ Installation
+## 🛠️ Installation 🛠️
 
 You can install **PyClifford** locally by following these simple steps:
 
@@ -75,11 +75,11 @@ You should see output corresponding to the Pauli X operator! Congratulations! �
 - Generalized stabilizer states that support non-Clifford gates.
 
 
-## Quotes from our first few users:
+## 💬 Quotes from our first few users 💬:
  - Prof. Zhen Bi (Pappalardo Fellow 17'@MIT, Assistant Professor@PennState): 
   > "*PyClifford is an exceptional tool that offers researchers in quantum condensed matter a wide range of capabilities, including an intuitive programming language for simulating and analyzing Clifford circuits, quantum measurement, and evaluation of entanglement quantities, all of which are crucial in advancing our understanding of the quantum world. Its continuous updates and enhancements by a well-coordinated team of experts make it a reliable and powerful resource that can keep pace with the latest research developments and drive new discoveries in the field.*"
 
-## Application show cases:
+## 🚀 Application show cases 🚀:
 <img src="/doc/show_cases.png" alt="Alt text" height="400" width="560">
 
 (We are still working on making detailed examples in those Jupyter notebooks)
@@ -88,7 +88,7 @@ You should see output corresponding to the Pauli X operator! Congratulations! �
  3. Classical shadow tomography with shallow layers (*Quantum Computation & Information*) [Link](/dev/demo-CST.ipynb)
  4. Clifford ansatz for quantum chemistry (*Quantum Computation & Quantum Chemistry*) [Link](/dev/demo-QChem.ipynb)
 
-## Structure of `PyClifford`:
+## 🧱 Structure of `PyClifford` 🧱:
 The structure of `PyClifford` is illustrated below. Pauli strings, stabilizer states, and Clifford maps are represented by binary or integer strings. All the low-level calculation is in the `utils.py` with JIT compliation. Then `paulialg.py` handles all the Pauli algebra and manipulation of Pauli string lists. On top of that, we have built `stabilizer.py` to handle stabilizer states and Clifford maps. Finally, `circuit.py` gives user an easy access to all the functions.
 
 In addition, we are interested in developing `PyCliffordExt` as an extension to `PyClifford`, where we would like to include few-T gate into the package. If you are interested in its physics or contributing to the code, please feel free to [contact us](https://scholar.harvard.edu/hongyehu/home)!
@@ -104,7 +104,7 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 - Qiskit 0.39.4
 - Pyscf 2.0.1
 
-## What will be in the next release (May 2025): 
+## 🔮 What will be in the next release (June-July 2025) 🔮: 
 - Generalized stabilizer states
 - Noisy circuit simulation of classical shadows
 - One-line calculation of Pauli weight used for classical post-processing. (Tensor network-based algorithm)
@@ -112,7 +112,7 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 
 <!--**For MacOS user:** you can create a virtual environment containing necessary dependences with `conda env create -f env/miniClifford.yml`-->
 
-## 📚 Citation
+## 📚 Citation 📚
 
 We are currently preparing a documentation paper for **PyClifford**, expected in **July 2025**. In the meantime, if you use this package in your research, please consider citing the related works that contributed to its development:
 
