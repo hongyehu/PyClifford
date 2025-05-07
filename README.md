@@ -131,4 +131,5 @@ We are currently preparing a documentation paper for **PyClifford**, expected in
   *Nature Communications 16, 2943 (2025)*  
   [DOI: 10.1038/s41467-025-57349-w](https://www.nature.com/articles/s41467-025-57349-w)
 
-
+## Changes
+We are planning to move **TorchClifford** to a separate package and keep **PyClifford** lightweight, as users' suggestions. For users of **TorchClifford**, please keep an eye for the update.
