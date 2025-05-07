@@ -3,7 +3,6 @@ from .utils import (
     ipow, pauli_tokenize, 
     clifford_rotate, pauli_transform,
     batch_dot, aggregate)
-import qutip as qt
 
 class Pauli(object):
     '''Represents a Pauli operator.
@@ -11,9 +10,10 @@ class Pauli(object):
     Parameters:
     g: int (2*N) - a Pauli string in binary repr.
     p: int - phase indicator (i power).'''
-    def __init__(self, g, p = None):
+    def __init__(self, g, p = None, **kwargs):
         self.g = g
         self.p = 0 if p is None else p
+        # kwargs ignored, in case subclass-specific arguments passed up
 
     def __repr__(self):
         # interprete phase factor
@@ -127,20 +127,40 @@ class Pauli(object):
         gs = numpy.expand_dims(self.g, 0)
         ps = numpy.array([self.p])
         return pauli_tokenize(gs, ps)
-    def to_qutip(self):
-        paulis = [qt.qeye(2), qt.sigmax(), qt.sigmay(), qt.sigmaz()]
-        tmp_list=[]
-        for i in range(self.g.shape[0]//2):
-            if (self.g[2*i]==1)&(self.g[2*i+1]==1):
-                tmp_list.append(paulis[2])
-            elif (self.g[2*i]==1)&(self.g[2*i+1]==0):
-                tmp_list.append(paulis[1])
-            elif (self.g[2*i]==0)&(self.g[2*i+1]==1):
-                tmp_list.append(paulis[3])
-            else:
-                tmp_list.append(paulis[0])
-        return (1j)**(self.p)*qt.tensor(tmp_list)
 
+    def to_numpy(self):
+        """Convert Pauli operator to numpy array representation."""
+        # Define all Pauli matrices as a single 4x2x2 array
+        sigma = numpy.array([
+            [[1, 0], [0, 1]],      # I (00)
+            [[0, 1], [1, 0]],      # X (10)
+            [[0, -1j], [1j, 0]],   # Y (11)
+            [[1, 0], [0, -1]]      # Z (01)
+        ], dtype=complex)
+
+        # Handle empty Pauli operator case
+        if self.N == 0:
+            return numpy.ones((1,1), dtype=complex)
+            
+        # Build list of matrices for tensor product
+        matrices = []
+        for i in range(self.N):
+            # Map binary representation (x,z) to Pauli matrix index using formula:
+            # idx = x + 3z - 2xz
+            # This maps:
+            # (0,0) -> 0 + 0 - 0 = 0 (I)
+            # (1,0) -> 1 + 0 - 0 = 1 (X) 
+            # (1,1) -> 1 + 3 - 2 = 2 (Y)
+            # (0,1) -> 0 + 3 - 0 = 3 (Z)
+            idx = self.g[2*i] + 3*self.g[2*i+1] - 2*self.g[2*i]*self.g[2*i+1]
+            matrices.append(sigma[idx])
+            
+        # Compute tensor product
+        result = matrices[0]
+        for mat in matrices[1:]:
+            result = numpy.kron(result, mat)
+        
+        return (1j)**(self.p) * result
 
 class PauliList(object):
     '''Represents a list of Pauli operators.
@@ -148,9 +168,10 @@ class PauliList(object):
     Parameters:
     gs: int (L, 2*N) - array of Pauli strings in binary repr.
     ps: int (L) - array of phase indicators (i powers).'''
-    def __init__(self, gs, ps = None):
+    def __init__(self, gs, ps=None, **kwargs):
         self.gs = gs
         self.ps = numpy.zeros(self.L, dtype=numpy.int_) if ps is None else ps
+        # kwargs ignored, in case subclass-specific arguments passed up
 
     def __repr__(self):
         return '\n'.join([repr(pauli) for pauli in self])
@@ -228,22 +249,47 @@ class PauliList(object):
 
     def tokenize(self):
         return pauli_tokenize(self.gs, self.ps)
-    def to_qutip(self):
-        lists = []
-        paulis = [qt.qeye(2),qt.sigmax(),qt.sigmay(),qt.sigmaz()]
-        for l in range(self.L):
-            tmp_list=[]
-            for i in range(self.N):
-                if (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==1):
-                    tmp_list.append(paulis[2])
-                elif (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==0):
-                    tmp_list.append(paulis[1])
-                elif (self.gs[l,2*i]==0)&(self.gs[l,2*i+1]==1):
-                    tmp_list.append(paulis[3])
-                else:
-                    tmp_list.append(paulis[0])
-            lists.append((1j)**(self.ps[l])*qt.tensor(tmp_list))
-        return lists
+
+    def to_numpy(self):
+        """Convert list of Pauli operators to numpy array representations in batch.
+        Returns a (L, 2^N, 2^N) array where L is the number of Pauli operators."""
+        # Define all Pauli matrices as a single 4x2x2 array
+        sigma = numpy.array([
+            [[1, 0], [0, 1]],      # I (00)
+            [[0, 1], [1, 0]],      # X (10)
+            [[0, -1j], [1j, 0]],   # Y (11)
+            [[1, 0], [0, -1]]      # Z (01)
+        ], dtype=complex)
+
+        # Handle empty Pauli operator case
+        if self.N == 0:
+            return numpy.ones((self.L, 1, 1), dtype=complex)
+            
+        # For each qubit position, get the corresponding Pauli matrices for all operators
+        matrices = []
+        for i in range(self.N):
+            # Map binary representation (x,z) to Pauli matrix index using formula:
+            # idx = x + 3z - 2xz for all operators at qubit i
+            idx = (self.gs[:,2*i] + 3*self.gs[:,2*i+1] - 
+                  2*self.gs[:,2*i]*self.gs[:,2*i+1])  # shape: (L,)
+            # Select corresponding Pauli matrices for all operators
+            # sigma[idx] has shape (L,2,2)
+            matrices.append(sigma[idx])
+            
+        # Compute tensor product for all operators simultaneously
+        result = matrices[0]  # shape: (L,2,2)
+        for mat in matrices[1:]:
+            # Reshape for broadcasting:
+            # result: (L,m,m) -> (L,m,1,m,1)
+            # mat: (L,2,2) -> (L,1,2,1,2)
+            m = result.shape[1]
+            result = result.reshape(self.L, m, 1, m, 1)
+            mat = mat.reshape(self.L, 1, 2, 1, 2)
+            # Broadcast multiply and reshape back
+            result = (result * mat).reshape(self.L, m*2, m*2)
+            
+        # Apply phases
+        return (1j)**(self.ps[:,None,None]) * result
 
 class PauliMonomial(Pauli):
     '''Represent a Pauli operator with a coefficient.
@@ -326,19 +372,10 @@ class PauliMonomial(Pauli):
 
     def inverse(self):
         return Pauli(self.g)/(self.c * 1j**self.p)
-    def to_qutip(self):
-        paulis = [qt.qeye(2), qt.sigmax(), qt.sigmay(), qt.sigmaz()]
-        tmp_list=[]
-        for i in range(self.g.shape[0]//2):
-            if (self.g[2*i]==1)&(self.g[2*i+1]==1):
-                tmp_list.append(paulis[2])
-            elif (self.g[2*i]==1)&(self.g[2*i+1]==0):
-                tmp_list.append(paulis[1])
-            elif (self.g[2*i]==0)&(self.g[2*i+1]==1):
-                tmp_list.append(paulis[3])
-            else:
-                tmp_list.append(paulis[0])
-        return self.c*(1j)**(self.p)*qt.tensor(tmp_list)
+
+    def to_numpy(self):
+        """Convert Pauli monomial to numpy array representation."""
+        return self.c * super().to_numpy()
 
 class PauliPolynomial(PauliList):
     '''Represent a linear combination of Pauli operators.
@@ -346,7 +383,7 @@ class PauliPolynomial(PauliList):
     Parameters:
     gs: int (L, 2*N) - array of Pauli strings in binary repr.
     ps: int (L) - array of phase indicators (i powers).
-    cs: comlex - coefficients.'''
+    cs: comlex (L) - coefficients.'''
     def __init__(self, *args, **kwargs):
         super(PauliPolynomial, self).__init__(*args, **kwargs)
         self.cs = numpy.ones(self.ps.shape, dtype=numpy.complex_) # default coefficient
@@ -425,22 +462,14 @@ class PauliPolynomial(PauliList):
         cs = aggregate(self.cs * 1j**self.ps, inds, gs.shape[0])
         mask = (numpy.abs(cs) > tol)
         return PauliPolynomial(gs[mask]).set_cs(cs[mask])
-    def to_qutip(self):
-        paulis = [qt.qeye(2),qt.sigmax(),qt.sigmay(),qt.sigmaz()]
-        summation = 0
-        for l in range(self.L):
-            tmp_list=[]
-            for i in range(self.N):
-                if (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==1):
-                    tmp_list.append(paulis[2])
-                elif (self.gs[l,2*i]==1)&(self.gs[l,2*i+1]==0):
-                    tmp_list.append(paulis[1])
-                elif (self.gs[l,2*i]==0)&(self.gs[l,2*i+1]==1):
-                    tmp_list.append(paulis[3])
-                else:
-                    tmp_list.append(paulis[0])
-            summation += self.cs[l]*(1j)**(self.ps[l])*qt.tensor(tmp_list)
-        return summation
+
+    def to_numpy(self):
+        """Convert Pauli polynomial to numpy array representation.
+        Returns a (2^N, 2^N) array representing the sum of all terms."""
+        # Get batch of Pauli matrices from parent class (shape: L x 2^N x 2^N)
+        matrices = super().to_numpy()
+        # Contract batch dimension with coefficients to get final matrix
+        return numpy.tensordot(self.cs, matrices, axes=(0,0))
 
 # ---- constructors ----
 def pauli(obj, N = None):

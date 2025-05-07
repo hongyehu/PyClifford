@@ -14,7 +14,13 @@ class ClassicalShadow(object):
         return 'ClassicalShadow(\n{},\n{})'.format(self.state, self.circuit).replace('\n','\n  ')
 
     def snapshots(self, nsample):
-        for povm in self.circuit.povm(nsample):
+        for _ in range(nsample):
             snapshot = self.state.copy()
-            snapshot.measure(povm)
+            self.circuit.reset()
+            self.circuit.forward(snapshot)
+            self.circuit.backward(snapshot)
             yield snapshot
+        # for povm in self.circuit.povm(nsample):
+        #     snapshot = self.state.copy()
+        #     snapshot.measure(povm)
+        #     yield snapshot
