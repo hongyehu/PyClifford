@@ -95,7 +95,7 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 
 <img src="/doc/structure_of_code.png" alt="Alt text" height="280" width="399">
 
-## Dependence of `PyClifford`:
+## 🧩 Dependence of `PyClifford` 🧩:
 - Numba
 - Numpy
 - QuTip
