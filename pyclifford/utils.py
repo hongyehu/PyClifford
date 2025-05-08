@@ -2,10 +2,10 @@ import numpy
 from numba import njit
 
 '''Conventions:
-Binary represention of Pauli string. (arXiv:quant-ph/0406196)
+Binary representation of Pauli string. (arXiv:quant-ph/0406196)
     A N-qubit Pauli string is represented as a (2*N)-dimensional binary 
-    vector of the form
-        g = [x0,z0;x1,z1;...;x(N-1),z(N-1)]
+    array of the following form:
+        g = [x0,z0;x1,z1;...;x(N-1),z(N-1)]  (flattened)
     which corresponds to
         sigma[g] = i^(x.z) prod_i X_i^xi Z_i^zi
 Commutation relation of Pauli strings:
@@ -19,7 +19,7 @@ def front(g):
     '''Find the first nontrivial qubit in a Pauli string.
 
     Parameters:
-    g: int (2*N) -  a Pauli string in binary repr.
+    g: int (2*N) -  a Pauli string in binary representation.
 
     Returns:
     i: int - position of its first nontrivial qubit.
@@ -40,10 +40,10 @@ def condense(g):
     a shorter string and the support.
 
     Parameters:
-    g: int (2*N) - a Pauli string in binary repr.
+    g: int (2*N) - a Pauli string in binary representation.
 
     Returns:
-    g_cond: int (2*n) - the condensed Pauli string in binary repr.
+    g_cond: int (2*n) - the condensed Pauli string in binary representation.
     qubits: int (n) - indices of supporting qubits.'''
     (N2,) = g.shape
     N = N2//2
@@ -59,7 +59,7 @@ def p0(g):
     '''Bare phase factor due to x.z for a Pauli string.
 
     Parameters:
-    g: int (2*N) - a Pauli string in binary repr.
+    g: int (2*N) - a Pauli string in binary representation.
 
     Returns:
     p0: int - bare phase factor x.z for the string.'''
@@ -75,8 +75,8 @@ def acq(g1, g2):
     '''Calculate Pauli operator anticmuunation indicator.
 
     Parameters:
-    g1: int (2*N) - the first Pauli string in binary repr.
-    g2: int (2*N) - the second Pauli string in binary repr.
+    g1: int (2*N) - the first Pauli string in binary representation.
+    g2: int (2*N) - the second Pauli string in binary representation.
     
     Returns:
     acq: int - acq = 0 if g1, g2 commute, acq = 1 if g1, g2 anticommute.'''
@@ -93,8 +93,8 @@ def ipow(g1, g2):
     '''Phase indicator for the product of two Pauli strings.
 
     Parameters:
-    g1: int (2*N) - the first Pauli string in binary repr.
-    g2: int (2*N) - the second Pauli string in binary repr.
+    g1: int (2*N) - the first Pauli string in binary representation.
+    g2: int (2*N) - the second Pauli string in binary representation.
     
     Returns:
     ipow: int - the phase indicator (power of i) when product 
@@ -118,7 +118,7 @@ def ps0(gs):
     '''Bare phase factor due to x.z for Pauli strings.
 
     Parameters:
-    gs: int (L,2*N) - array of Pauli strings in binary repr.
+    gs: int (L,2*N) - array of Pauli strings in binary representation.
 
     Returns:
     ps0: int (L) - bare phase factor x.z for all strings.'''
@@ -135,7 +135,7 @@ def acq_mat(gs):
     '''Construct anticommutation indicator matrix for a set of Pauli strings.
 
     Parameters:
-    gs: int (L,2*N) - array of Pauli strings in binary repr.
+    gs: int (L,2*N) - array of Pauli strings in binary representation.
 
     Returns:
     mat: int (L,L) - anticommutation indicator matrix.'''
@@ -186,7 +186,7 @@ def pauli_tokenize(gs, ps):
     '''Create a token of Pauli operators for learning tasks.
 
     Parameters:
-    gs: int (L, 2*N) - Pauli strings in binary repr.
+    gs: int (L, 2*N) - Pauli strings in binary representation.
     ps: int (L) - phase indicators.
 
     Returns:
@@ -210,11 +210,11 @@ def pauli_combine(C, gs_in, ps_in):
 
     Parameters:
     C: int (L_out, L_in) - one-hot encoding of selected operators.
-    gs_in: int (L_in, 2*N) - input binary repr of Pauli strings.
+    gs_in: int (L_in, 2*N) - input binary representation of Pauli strings.
     ps_in: int (L_in) - phase indicators of input operators.
 
     Returns:
-    gs_out: int (L_out, 2*N) - output binary repr of Pauli strings.
+    gs_out: int (L_out, 2*N) - output binary representation of Pauli strings.
     ps_out: int (L_out) - phase indicators of output operators.
     '''
     (L_out, L_in) = C.shape
@@ -234,13 +234,13 @@ def pauli_transform(gs_in, ps_in, gs_map, ps_map):
         (right multiplication)
 
     Parameters:
-    gs_in: int (L, 2*N) - input binary repr of Pauli strings.
+    gs_in: int (L, 2*N) - input binary representation of Pauli strings.
     ps_in: int (L) - phase indicators of input operators.
     gs_map: int (2*N, 2*N) - operator map in binary representation.
     ps_map: int (2*N) - phase indicators associated to target operators.
 
     Returns:
-    gs_out: int (L, 2*N) - output binary repr of Pauli strings.
+    gs_out: int (L, 2*N) - output binary representation of Pauli strings.
     ps_out: int (L) - phase indicators of output operators.'''
     gs_out, ps_out = pauli_combine(gs_in, gs_map, ps_map)
     ps_out = (ps_in + ps0(gs_in) + ps_out)%4
@@ -252,9 +252,9 @@ def clifford_rotate(g, p, gs, ps):
     '''Apply Clifford rotation to Pauli operators.
 
     Parameters:
-    g: int (2*N) -  Clifford rotation generator in binary repr.
+    g: int (2*N) -  Clifford rotation generator in binary representation.
     p: int - phase indicator (p = 0, 2 only).
-    gs: int (L, 2*N) - input binary repr of Pauli strings.
+    gs: int (L, 2*N) - input binary representation of Pauli strings.
     ps: int (L)  - phase indicators of input operators.
  
     Returns: gs, ps in-place modified.''' 
@@ -270,8 +270,8 @@ def clifford_rotate_signless(g, gs):
     '''Apply Clifford rotation to Pauli strings without signs.
 
     Parameters:
-    g: int (2*N) -  Clifford rotation generator in binary repr.
-    gs: int (L, 2*N) - array of Pauli strings in binary repr.
+    g: int (2*N) -  Clifford rotation generator in binary representation.
+    gs: int (L, 2*N) - array of Pauli strings in binary representation.
 
     Returns: gs in-place modified.''' 
     (L, N2) = gs.shape
@@ -307,7 +307,7 @@ def pauli_diagonalize1(g1, i0 = 0):
     to qubit i0 as Z.
 
     Parameters:
-    g1: int (2*N) - Pauli string in binary repr.
+    g1: int (2*N) - Pauli string in binary representation.
     i0: int  - target qubit
 
     Returns:
@@ -339,6 +339,7 @@ def pauli_diagonalize1(g1, i0 = 0):
 def pauli_diagonalize2(g1, g2, i0 = 0):
     '''Find a series of Clifford roations to diagonalize a pair of anticommuting
     Pauli strings to qubit i0 as Z and X (or Y).
+
     Parameters:
     g1: int (2*N) - binary representation of stabilizer.
     g2: int (2*N) - binary representation of destabilizer.
@@ -498,57 +499,85 @@ def state_to_map(gs_in, ps_in):
     return gs_out, ps_out
 
 # ---- stabilizer related ----
-@njit
-def stabilizer_project(gs_stb, gs_obs, r):
-    '''Project stabilizer tableau to a new stabilizer basis.
+''' Formulation:
+A stabilizer state encoding r logical qubits on N physical qubits 
+is described by the density matrix of the following form:
+    rho = sum_{i=1}^{N-r} 2^{-r} (1 + S_i)/2.
+where 
+* S_i are Pauli stabilizers (commuting with each other), 
+  whose Pauli strings are stored in gs_stb[r:N] in binary representation,
+  and phase indicators are stored in ps_stb[r:N].
+* r is the log2 rank of the density matrix, i.e. the number of standby stabilizers.
 
-    Parameters:
-    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
-    gs_obs: int (L, 2*N) - Pauli strings of new stablizers to impose.
-    r: int - log2 rank of density matrix (num of standby stablizers).
+Structure of Stabilizer Tableau:
+* gs_stb[0:r]:     Pauli strings of standby stabilizers in binary representation
+* gs_stb[r:N]:     Pauli strings of active stabilizers in binary representation
+* gs_stb[N:N+r]:   Pauli strings of standby destabilizers in binary representation
+* gs_stb[N+r:2*N]: Pauli strings of active destabilizers in binary representation
+* ps_stb[0:r]:     phase indicators of standby stabilizers
+* ps_stb[r:N]:     phase indicators of active stabilizers
+* ps_stb[N:N+r]:   phase indicators of standby destabilizers
+* ps_stb[N+r:2*N]: phase indicators of active destabilizers
+Symplectic structure: each stabilizer gs_stb[i] only anticommutes with 
+                      its destabilizer gs_stb[N+i].
 
-    Returns:
-    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
-    r: int - updated log2 rank of density matrix.'''
-    (L, Ng) = gs_obs.shape
-    N = Ng//2
-    assert 0<=r<=N
-    for k in range(L): # loop over incoming projections gs_obs[k]
-        update = False
-        extend = False
-        p = 0 # pointer
-        for j in range(2*N):
-            if acq(gs_stb[j], gs_obs[k]): # find gs_stb[j] anticommute with gs_obs[k]
-                if update: # if gs_stb[j] is not the first anticommuting operator
-                    gs_stb[j] = (gs_stb[j] + gs_stb[p])%2 # update gs_stb[j] to commute with gs_obs[k]
-                else: # if gs_stb[j] is the first anticommuting operator
-                    if j < N + r: # if gs_stb[j] is not an active destabilizer
-                        p = j # move pointer to j
-                        update = True
-                        if not r <= j < N: # if gs_stb[j] is a standby operator
-                            extend = True
-                    # if gs_stb[j] is an active destablizer, gs_obs[k] alreay a combination of active stablizers, do nothing.
-        if update:
-            # now gs_stb[p] and gs_obs[k] anticommute
-            q = (p+N)%(2*N) # get q as dual of p 
-            gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
-            gs_stb[p] = gs_obs[k] # add gs_obs[k] to gs_stb[p]
-            if extend:
-                r -= 1 # rank will reduce under extension
-                # bring new stabilizer from p to r
-                if p == r:
-                    pass
-                elif q == r:
-                    gs_stb[numpy.array([p,q])] = gs_stb[numpy.array([q,p])] # swap p,q
-                else:
-                    s = (r+N)%(2*N) # get s as dual of r
-                    gs_stb[numpy.array([p,r])] = gs_stb[numpy.array([r,p])] # swap p,r
-                    gs_stb[numpy.array([q,s])] = gs_stb[numpy.array([s,q])] # swap q,s
-    return gs_stb, r
-
+Algorithm:
+Stabilizer states can serve both as the prior density matrix 
+and as the set of commuting observables.
+- As state: described by density matrix 
+        rho = sum_{i=1}^{N-r} 2^{-r} (1 + S_i)/2
+    where S_i are the active stabilizers.
+- As observable: described by projective measurement operator 
+        pi(o) = sum_{k=1}^{L} 2^{-N+L} (1 + (-)^o_k O_k)/2
+    where O_k are the commuting observables, and o_k is the measurement outcome.
+---- measure ----
+When measuring {O_k} on a stabilizer state of {S_i}, the algorithm is as follows:
+for O_k in {O_k}:
+    if O_k anticommutes with:
+        case 1: any active stabilizer (the first of which being S_p)
+        case 2: any standy stabilizer or destabilizer (the first of which being S_p)
+        case 3: otherwise
+    then:
+        case 1: O_k is an error operator  -> update + readout
+        case 2: O_k is a logical operator -> update + extend + readout
+        case 3: O_k is a trivial operator -> readout
+    if update:
+        - O_k replaces S_p to be the active stabilizer,
+        - S_p becomes its corresponding destabilizer,
+        - for any other stabilizers and destabilizers that anticommute with O_k,
+          update them to commute with O_k by multiplying O_k to them,
+          - keep track of the phase accumulated in the process, [1]
+        if extend:
+            - rank r is reduced by 1,
+            - include the new stabilizer S_p to active stabilizers,
+            - include the new destabilizer S_q to active destabilizers.
+        - sign of O_k is randomly sampled with half-to-half probability. [2]
+          - record measurement outcome, [3]
+          - update log2 probability. [4]
+    else:
+        - readout measurement outcome, [5]
+        - log2 probability = 0. [6]
+--- postselect ---
+Same as measure, but:
+- [2] measurement outcome not sampled butcopied from observation value.
+- [3] omitted.
+- [6] if stabilizer readout not match observation value, log2 probability = -inf.
+--- project ---
+Same as measure, but lines [1-6] are omitted.
+'''
 @njit
 def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r):
-    '''Measure Pauli operators on a stabilizer state.
+    '''Measure a set of commuting Pauli observables on a stabilizer state.
+
+    Given the prior state rho = sum_{i=1}^{N-r} 2^{-r} (1 + S_i)/2,
+    specified by (gs_stb, ps_stb, r), and a set of commuting observables
+    {O_k}, specified by (gs_obs, ps_obs), sample measurement outcomes 
+    out := {o_k} from the conditional probability distribution:
+        p(pi(o)|rho) := Tr(rho pi(o))
+    where pi(o) = sum_{k=1}^{L} 2^{-N+L} (1 + (-)^o_k O_k)/2 is the 
+    measurement operator. Upon measurement, the state is updated to:
+        rho' = pi(o) rho pi(o) / p(pi(o)|rho).
+    Returns rho', o, log2 p(pi(o)|rho).
 
     Parameters:
     gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
@@ -573,7 +602,7 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r):
     for k in range(L): # for each observable gs_obs[k]
         update = False
         extend = False
-        p = 0 # pointer
+        p = 0 # pointer to the first anticommuting operator
         ga[:] = 0
         pa = 0
         for j in range(2*N):
@@ -589,7 +618,7 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r):
                         update = True
                         if not r <= j < N: # if gs_stb[j] is a standby operator
                             extend = True
-                    else: # gs_stb[j] anticommute with destabilizer, meaning gs_obs[k] already a combination of active stabilizers
+                    else: # gs_stb[j] an active destabilizer, meaning gs_obs[k] already a combination of active stabilizers
                         # collect corresponding stabilizer component to ga
                         pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
                         ga = (ga + gs_stb[j-N])%2
@@ -618,6 +647,132 @@ def stabilizer_measure(gs_stb, ps_stb, gs_obs, ps_obs, r):
             assert((ga == gs_obs[k]).all())
             out[k] = ((pa - ps_obs[k])%4)//2
     return gs_stb, ps_stb, r, out, log2prob
+
+@njit
+def stabilizer_postselect(gs_stb, ps_stb, gs_obs, ps_obs, r):
+    '''Postselect stabilizer state given a set of Pauli observations.
+
+    Given the prior state rho = sum_{i=1}^{N-r} 2^{-r} (1 + S_i)/2,
+    specified by (gs_stb, ps_stb, r), and a measurement operator
+    sigma = sum_{k=1}^{L} 2^{-N+L} (1 + O_k)/2. Postselect the state by
+        rho' = sigma rho sigma / p(sigma|rho),
+    where p(sigma|rho) = Tr(rho sigma) is the success probability.
+    Returns rho', log2 p(sigma|rho).
+
+    Parameters:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    gs_obs: int (L, 2*N) - strings of Pauli operators to be postselected.
+    ps_obs: int (L) - phase indicators of Pauli operators to be postselected.
+    r: int - log2 rank of density matrix (num of standby stablizers).
+
+    Returns:
+    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
+    ps_stb: int (N) - phase indicators of (de)stabilizers.
+    r: int - updated log2 rank of density matrix.
+    log2prob: real - log2 probability of successful postselection.'''
+    (L, Ng) = gs_obs.shape
+    N = Ng//2
+    assert 0<=r<=N
+    ga = numpy.empty(2*N, dtype=numpy.int_) # workspace for stabilizer accumulation
+    pa = 0 # workspace for phase accumulation
+    log2prob = 0.
+    for k in range(L): # for each observable gs_obs[k]
+        update = False
+        extend = False
+        p = 0 # pointer to the first anticommuting operator
+        ga[:] = 0
+        pa = 0
+        for j in range(2*N):
+            if acq(gs_stb[j], gs_obs[k]): # find gs_stb[j] anticommute with gs_obs[k]
+                if update: # if gs_stb[j] is not the first anticommuting operator
+                    # update gs_stb[j] to commute with gs_obs[k]
+                    if j < N: # if gs_stb[j] is a stablizer, phase matters
+                        ps_stb[j] = (ps_stb[j] + ps_stb[p] + ipow(gs_stb[j], gs_stb[p]))%4
+                    gs_stb[j] = (gs_stb[j] + gs_stb[p])%2
+                else: # if gs_stb[j] is the first anticommuting operator
+                    if j < N + r: # if gs_stb[j] is not an active destabilizer
+                        p = j # move pointer to j
+                        update = True
+                        if not r <= j < N: # if gs_stb[j] is a standby operator
+                            extend = True
+                    else: # gs_stb[j] an active destabilizer, meaning gs_obs[k] already a combination of active stabilizers
+                        # collect corresponding stabilizer component to ga
+                        pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
+                        ga = (ga + gs_stb[j-N])%2
+        if update:
+            # now gs_stb[p] and gs_obs[k] anticommute
+            q = (p+N)%(2*N) # get q as dual of p 
+            gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
+            gs_stb[p] = gs_obs[k] # add gs_obs[k] to gs_stb[p]
+            if extend:
+                r -= 1 # rank will reduce under extension
+                # bring new stabilizer from p to r
+                if p == r:
+                    pass
+                elif q == r:
+                    gs_stb[numpy.array([p,q])] = gs_stb[numpy.array([q,p])] # swap p,q
+                else:
+                    s = (r+N)%(2*N) # get s as dual of r
+                    gs_stb[numpy.array([p,r])] = gs_stb[numpy.array([r,p])] # swap p,r
+                    gs_stb[numpy.array([q,s])] = gs_stb[numpy.array([s,q])] # swap q,s
+                p = r
+            # stabilizer sign set by observation value via postselection
+            ps_stb[p] = ps_obs[k]
+            log2prob -= 1.
+        else: # no update, gs_obs[k] is eigen, result is in pa
+            assert((ga == gs_obs[k]).all())
+            if (pa - ps_obs[k])%4 != 0: # if result not match observation
+                log2prob -= numpy.inf # log likelihood -inf
+    return gs_stb, ps_stb, r, log2prob
+
+@njit
+def stabilizer_project(gs_stb, gs_obs, r):
+    '''Project stabilizer tableau to a new stabilizer basis.
+
+    Parameters:
+    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
+    gs_obs: int (L, 2*N) - Pauli strings of new stablizers to impose.
+    r: int - log2 rank of density matrix (num of standby stablizers).
+
+    Returns:
+    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
+    r: int - updated log2 rank of density matrix.'''
+    (L, Ng) = gs_obs.shape
+    N = Ng//2
+    assert 0<=r<=N
+    for k in range(L): # loop over incoming projections gs_obs[k]
+        update = False
+        extend = False
+        p = 0 # pointer to the first anticommuting operator
+        for j in range(2*N):
+            if acq(gs_stb[j], gs_obs[k]): # find gs_stb[j] anticommute with gs_obs[k]
+                if update: # if gs_stb[j] is not the first anticommuting operator
+                    gs_stb[j] = (gs_stb[j] + gs_stb[p])%2 # update gs_stb[j] to commute with gs_obs[k]
+                else: # if gs_stb[j] is the first anticommuting operator
+                    if j < N + r: # if gs_stb[j] is not an active destabilizer
+                        p = j # move pointer to j
+                        update = True
+                        if not r <= j < N: # if gs_stb[j] is a standby operator
+                            extend = True
+                    # if gs_stb[j] is an active destablizer, gs_obs[k] alreay a combination of active stablizers, do nothing.
+        if update:
+            # now gs_stb[p] and gs_obs[k] anticommute
+            q = (p+N)%(2*N) # get q as dual of p 
+            gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
+            gs_stb[p] = gs_obs[k] # add gs_obs[k] to gs_stb[p]
+            if extend:
+                r -= 1 # rank will reduce under extension
+                # bring new stabilizer from p to r
+                if p == r:
+                    pass
+                elif q == r:
+                    gs_stb[numpy.array([p,q])] = gs_stb[numpy.array([q,p])] # swap p,q
+                else:
+                    s = (r+N)%(2*N) # get s as dual of r
+                    gs_stb[numpy.array([p,r])] = gs_stb[numpy.array([r,p])] # swap p,r
+                    gs_stb[numpy.array([q,s])] = gs_stb[numpy.array([s,q])] # swap q,s
+    return gs_stb, r
 
 @njit
 def stabilizer_expect(gs_stb, ps_stb, gs_obs, ps_obs, r):
@@ -654,7 +809,7 @@ def stabilizer_expect(gs_stb, ps_stb, gs_obs, ps_obs, r):
         if trivial:
             xs[k] = (-1)**(((pa - ps_obs[k])%4)//2)
     return xs
-
+    
 @njit
 def stabilizer_entropy(gs, mask):
     '''Entanglement entropy of the stabilizer state in a given region.
@@ -814,167 +969,3 @@ def aggregate(data_in, inds, l):
     for i in range(data_in.shape[0]):
         data_out[inds[i]] += data_in[i]
     return data_out
-# Aug 8th
-@njit
-def stabilizer_projection_trace(gs_stb, ps_stb, gs_obs, ps_obs, r):
-    '''Measure Pauli operators on a stabilizer state.
-
-    Parameters:
-    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
-    ps_stb: int (N) - phase indicators of (de)stabilizers.
-    gs_obs: int (L, 2*N) - strings of Pauli operators to be measured.
-    ps_obs: int (L) - phase indicators of Pauli operators to be measured.
-    r: int - log2 rank of density matrix (num of standby stablizers).
-
-    Returns:
-    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
-    ps_stb: int (N) - phase indicators of (de)stabilizers.
-    r: int - updated log2 rank of density matrix.
-    trace: float - Tr(P * rho1 * P*)'''
-    (L, Ng) = gs_obs.shape
-    N = Ng//2
-#     assert L==N # Current implementation is full state projection
-    assert 0<=r<=N
-    ga = numpy.empty(2*N, dtype=numpy.int_) # workspace for stabilizer accumulation
-    pa = 0 # workspace for phase accumulation
-    trace = 1
-    for k in range(L): # for each observable gs_obs[k]
-        update = False
-        extend = False
-        p = 0 # pointer
-        ga[:] = 0
-        pa = 0
-        for j in range(2*N):
-            if acq(gs_stb[j], gs_obs[k]): # find gs_stb[j] anticommute with gs_obs[k]
-                if update: # if gs_stb[j] is not the first anticommuting operator
-                    # update gs_stb[j] to commute with gs_obs[k]
-                    if j < N: # if gs_stb[j] is a stablizer, phase matters
-                        ps_stb[j] = (ps_stb[j] + ps_stb[p] + ipow(gs_stb[j], gs_stb[p]))%4
-                    gs_stb[j] = (gs_stb[j] + gs_stb[p])%2
-                else: # if gs_stb[j] is the first anticommuting operator
-                    if j < N + r: # if gs_stb[j] is not an active destabilizer
-                        p = j # move pointer to j
-                        update = True
-                        if not r <= j < N: # if gs_stb[j] is a standby operator
-                            extend = True
-                    else: # gs_stb[j] anticommute with destabilizer, meaning gs_obs[k] already a combination of active stabilizers
-                        # collect corresponding stabilizer component to ga
-                        pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
-                        ga = (ga + gs_stb[j-N])%2
-        if update:
-            # now gs_stb[p] and gs_obs[k] anticommute
-            q = (p+N)%(2*N) # get q as dual of p 
-            gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
-            gs_stb[p] = gs_obs[k] # add gs_obs[k] to gs_stb[p]
-            if extend:
-                r -= 1 # rank will reduce under extension
-                # bring new stabilizer from p to r
-                if p == r:
-                    pass
-                elif q == r:
-                    gs_stb[numpy.array([p,q])] = gs_stb[numpy.array([q,p])] # swap p,q
-                else:
-                    s = (r+N)%(2*N) # get s as dual of r
-                    gs_stb[numpy.array([p,r])] = gs_stb[numpy.array([r,p])] # swap p,r
-                    gs_stb[numpy.array([q,s])] = gs_stb[numpy.array([s,q])] # swap q,s
-                p = r
-            # the projection will change phase of stabilizer
-            ps_stb[p] = ps_obs[k]
-            trace = trace/2.
-        else: # no update, gs_obs[k] is eigen, result is in pa
-            assert((ga == gs_obs[k]).all())
-            if not pa == ps_obs[k]:
-                trace = 0.
-    return gs_stb, ps_stb, r, trace
-
-
-
-############ Jan 26 Added by Hong-Ye Hu #############
-@njit
-def decompose(g, gs, ps):
-    '''  Decompose a pauli string to phase*destabilizers*stabilizers
-    Parameters:
-    g: int(2*N) - the binary vector of a pauli string
-    gs: int(2*N,2*N) - the full tableau
-    ps: int(2*N) - phase of stabilizer and destabilizer
-    
-    Returns:
-    phase: int - phase in terms of imaginery power
-    b: int(N) - binary encoding of destabilizer decomposition
-    c: int(N) - binary encoding of stabilizer decomposition
-    '''
-    phase = 0
-    tmp_p = np.zeros_like(g)
-    N = gs.shape[0]//2
-    # b = int(np.zeros(N)) # numbda does not support change data type
-    # c = int(np.zeros(N))
-    b = np.array([0 for _ in range(N)])
-    c = np.array([0 for _ in range(N)])
-    for i in range(N):
-        if acq(g,gs[i]): #anti-commute
-            b[i] = 1
-            phase = phase - ipow(tmp_p,gs[i+N]) + ps[i+N]
-            tmp_p = (tmp_p+gs[i+N])%2
-    for i in range(N):
-        if acq(g,gs[i+N]): #anti-commute
-            c[i] = 1
-            phase = phase - ipow(tmp_p,gs[i]) + ps[i]
-            tmp_p = (tmp_p+gs[i])%2
-    return phase%4, tmp_p, b, c
-
-@njit
-def stabilizer_postselection(gs_stb, ps_stb, gs_ob, ps_ob):
-    '''
-    Stabilizer post-selection (pure state)
-    
-    Parameters:
-    gs_stb: int (2*N, 2*N) - Pauli strings in original stabilizer tableau.
-    ps_stb: int (N) - phase indicators of (de)stabilizers.
-    gs_ob: int (2*N) - strings of Pauli operators to be measured.
-    ps_obs: int (1) - phase indicators of Pauli operators to be measured.
-    Returns:
-    gs_stb: int (2*N, 2*N) - Pauli strings in updated stabilizer tableau.
-    ps_stb: int (N) - phase indicators of (de)stabilizers.
-    prob: float 
-    '''
-    (_, Ng) = gs_stb.shape
-    N = Ng//2
-    ga = numpy.empty(2*N, dtype=numpy.int_) # workspace for stabilizer accumulation
-    pa = 0 # workspace for phase accumulation
-    prob = 1.0
-    # one projection by gs_ob
-    update = False
-    p=0
-    ga[:] = 0
-    pa = 0
-    for j in range(2*N):
-        if acq(gs_stb[j], gs_ob): # find gs_stb[j] anticommute with gs_obs[k]
-            if update: # if gs_stb[j] is not the first anticommuting operator
-                # update gs_stb[j] to commute with gs_obs[k]
-                if j < N: # if gs_stb[j] is a stablizer, phase matters
-                    ps_stb[j] = (ps_stb[j] + ps_stb[p] + ipow(gs_stb[j], gs_stb[p]))%4
-                gs_stb[j] = (gs_stb[j] + gs_stb[p])%2
-            else: # if gs_stb[j] is the first anticommuting operator
-                if j < N: # if gs_stb[j] is not an active destabilizer
-                    p = j # move pointer to j
-                    update = True
-
-                else: # gs_stb[j] anticommute with destabilizer, meaning gs_obs[k] already a combination of active stabilizers
-                    # collect corresponding stabilizer component to ga
-                    pa = (pa + ps_stb[j-N] + ipow(ga, gs_stb[j-N]))%4
-                    ga = (ga + gs_stb[j-N])%2
-    if update:
-        # now gs_stb[p] and gs_obs[k] anticommute
-        q = (p+N)%(2*N) # get q as dual of p 
-        gs_stb[q] = gs_stb[p] # move gs_stb[p] to gs_stb[q]
-        gs_stb[p] = gs_ob # add gs_obs[k] to gs_stb[p]
-
-        # the projection will change phase of stabilizer
-        ps_stb[p] = ps_ob
-        prob = prob/2.0
-
-    else: # no update, gs_obs[k] is eigen, result is in pa
-        assert((ga == gs_ob).all())
-        if not pa == ps_ob:
-            prob = 0.
-    return gs_stb, ps_stb, prob
