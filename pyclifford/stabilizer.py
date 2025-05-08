@@ -264,12 +264,14 @@ class StabilizerState(PauliList):
         gs, ps = pauli_combine(C, self.gs[self.r:self.N], self.ps[self.r:self.N])
         return PauliList(gs, ps)
 
+
     def get_prob(self, out):
         '''Evaluate the probability of getting a bit string readout.
            Assume computational basis measurement.'''
         if self.N != out.shape[0]:
             raise ValueError("readout size {} is incompatible with system size {}!".format(out.shape[0], self.N))
         return self.expect(bit_state(self.N, out))
+
 
     # !!! this function has exponential complexity.
     @property
