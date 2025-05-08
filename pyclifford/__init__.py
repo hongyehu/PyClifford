@@ -1,3 +1,4 @@
+__version__ = '0.1.1'  # match this to the setup.py
 from .paulialg import (
     Pauli,PauliList,PauliMonomial,PauliPolynomial,
     pauli, paulis, pauli_identity, pauli_zero)
