@@ -44,7 +44,7 @@ source pyclifford-env/bin/activate
 
 Make sure you have the following packages installed:
 ```bash
-pip install numpy matplotlib numba qutip
+pip install numpy matplotlib numba
 ```
 You may also need to install a compatible version of setuptools:
 ```bash
@@ -68,7 +68,7 @@ print(pc.pauli("X"))
 ```
 You should see output corresponding to the Pauli X operator! Congratulations! 🎉
 
-## :fire: New Feature :fire:
+## :fire: New Release (v.0.1.1) :fire:
 
 **We're excited to introduce our latest feature!:** :sparkles: 
 - A new `examples` folder containing step-by-step examples.
@@ -152,7 +152,6 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 ## 🧩 Dependence of `PyClifford` 🧩:
 - Numba
 - Numpy
-- QuTip
 - Matplotlib
 ### Dependence of `PyCliffordExt`:
 - Qiskit 0.39.4
