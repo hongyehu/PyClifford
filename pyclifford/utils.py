@@ -202,7 +202,7 @@ def pauli_tokenize(gs, ps):
         ts[j,N] = 4 + x * (11 - 9 * x + 2 * x**2) // 2
     return ts
 
-# ---- combination and trasnformation ----
+# ---- combination, trasnformation, decomposition ----
 @njit
 def pauli_combine(C, gs_in, ps_in): 
     '''Combine Pauli operators by operator product.
@@ -245,6 +245,40 @@ def pauli_transform(gs_in, ps_in, gs_map, ps_map):
     gs_out, ps_out = pauli_combine(gs_in, gs_map, ps_map)
     ps_out = (ps_in + ps0(gs_in) + ps_out)%4
     return gs_out, ps_out
+
+@njit
+def pauli_decompose(gs_in, ps_in, gs_stb, ps_stb):
+    '''Decompose a Pauli operator into stabilizer and destabilizers.
+
+    Parameters:
+    gs_in: int (L, 2*N) - Pauli strings in binary representation.
+    ps_in: int (L) - phase indicators of Pauli operators.
+    gs_stb: int (2*N, 2*N) - stabilizer tableaux in binary representation.
+    ps_stb: int (2*N) - phase indicators of (de)stabilizer.
+
+    Returns:
+    bs_out: int (L, N) - binary encoding of destabilizer decomposition.
+    cs_out: int (L, N) - binary encoding of stabilizer decomposition.
+    ps_out: int (L) - phase indicators of decomposed operators.'''
+    (L, N2) = gs_in.shape
+    N = N2//2
+    bs_out = numpy.zeros((L, N), dtype=numpy.int_)
+    cs_out = numpy.zeros((L, N), dtype=numpy.int_)
+    ps_out = ps_in.copy()
+    g_tmp = numpy.zeros(N2, dtype=numpy.int_)
+    for k in range(L):
+        g_tmp.fill(0)
+        for j in range(N):
+            if acq(gs_in[k], gs_stb[j]):
+                bs_out[k,j] = 1
+                ps_out[k] = ps_out[k] - ps_stb[j+N] - ipow(g_tmp, gs_stb[j+N])
+                g_tmp = (g_tmp + gs_stb[j+N])%2
+        for j in range(N):
+            if acq(gs_in[k], gs_stb[j+N]):
+                cs_out[k,j] = 1
+                ps_out[k] = ps_out[k] - ps_stb[j] - ipow(g_tmp, gs_stb[j])
+                g_tmp = (g_tmp + gs_stb[j])%2
+    return bs_out, cs_out, ps_out%4
 
 # ---- clifford rotation ----
 @njit
@@ -969,3 +1003,17 @@ def aggregate(data_in, inds, l):
     for i in range(data_in.shape[0]):
         data_out[inds[i]] += data_in[i]
     return data_out
+
+# ---- generalized stabilizer utilities ----
+@njit
+def calculate_chi(chi_old, phi, fusion_map, fusion_p, L_new):
+    L_old, L_add = fusion_map.shape
+    chi_new = numpy.zeros((L_new,L_new), dtype=numpy.complex_)
+    for i1 in range(L_old):
+        for j1 in range(L_add):
+            k1 = fusion_map[i1,j1]
+            for i2 in range(L_old):
+                for j2 in range(L_add):
+                    k2 = fusion_map[i2,j2]
+                    chi_new[k1,k2] += chi_old[i1,i2] * phi[j1,j2] * 1j**(fusion_p[i1,j1] + fusion_p[i2,j2])
+    return chi_new

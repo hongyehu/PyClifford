@@ -65,7 +65,7 @@ class CliffordMap(PauliList):
         '''Returns the inverse of this Clifford map, (such that it composes with
         its inverse results in identity map).'''
         gs_inv = z2inv(self.gs)
-        gs_iden, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
+        _, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
         ps_inv = (- ps_mis - ps0(gs_inv))%4
         return CliffordMap(gs_inv, ps_inv)
 

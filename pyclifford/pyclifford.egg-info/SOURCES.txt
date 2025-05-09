@@ -1,0 +1,9 @@
+setup.py
+pyclifford.egg-info/PKG-INFO
+pyclifford.egg-info/SOURCES.txt
+pyclifford.egg-info/dependency_links.txt
+pyclifford.egg-info/requires.txt
+pyclifford.egg-info/top_level.txt
+tests/__init__.py
+tests/test_paulialg.py
+tests/test_stabilizer.py

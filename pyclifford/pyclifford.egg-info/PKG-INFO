@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: pyclifford
+Version: 0.1.0
+Summary: A Python package for Clifford algebra and quantum computing
+Author: PyClifford Team
+Requires-Python: >=3.6
+Requires-Dist: numpy
+Requires-Dist: matplotlib
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
