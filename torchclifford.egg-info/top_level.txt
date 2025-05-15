@@ -1,3 +1,0 @@
-pyclifford
-pycliffordext
-torchclifford
