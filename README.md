@@ -64,6 +64,13 @@ pip install .
 Open a Python shell and try:
 ```bash
 import pyclifford as pc
+print(pc.__version__)
+```
+
+Suppose the version is >=**v0.1.1** ; then, it is the updated version. See the release notes later for the changes.
+And now try:
+```bash
+import pyclifford as pc
 print(pc.pauli("X"))
 ```
 You should see output corresponding to the Pauli X operator! Congratulations! 🎉
