@@ -64,6 +64,13 @@ pip install .
 Open a Python shell and try:
 ```bash
 import pyclifford as pc
+print(pc.__version__)
+```
+
+Suppose the version is >=**v0.1.1** ; then, it is the updated version. See the release notes later for the changes.
+And now try:
+```bash
+import pyclifford as pc
 print(pc.pauli("X"))
 ```
 You should see output corresponding to the Pauli X operator! Congratulations! 🎉
@@ -82,13 +89,13 @@ import pyclifford as pc
 
 # Create a 4-qubit quantum circuit
 N = 4
-circ = pc.Circuit(N)
+circ = pc.Circuit()
 
 # Apply gates: H on qubit 0, then a chain of CNOTs
-circ.take(pc.H(0))
-circ.take(pc.CNOT(0, 1))
-circ.take(pc.CNOT(1, 2))
-circ.take(pc.CNOT(2, 3))
+circ.append(pc.H(0))
+circ.append(pc.CNOT(0, 1))
+circ.append(pc.CNOT(1, 2))
+circ.append(pc.CNOT(2, 3))
 
 # Initialize the |0000⟩ state
 state = pc.zero_state(N)
@@ -100,6 +107,26 @@ state = circ.forward(state)
 print("State after circuit:", state)
 ```
 
+Or one can simply do
+
+```python
+import pyclifford as pc
+
+# Create a 4-qubit quantum circuit
+N = 4
+circ = pc.Circuit(pc.H(0),pc.CNOT(0, 1),pc.CNOT(1, 2),pc.CNOT(2, 3))
+
+# Initialize the |0000⟩ state
+state = pc.zero_state(N)
+
+# Apply the circuit
+state = circ.forward(state)
+
+# Print the final state
+print("State after circuit:", state)
+```
+
+
 Now, let's do a **mid-circuit** measurement!
 
 ```python
@@ -107,15 +134,15 @@ import pyclifford as pc
 
 # Create a 4-qubit quantum circuit
 N = 4
-circ = pc.Circuit(N)
+circ = pc.Circuit()
 
 # Apply gates: H on qubit 0, then a chain of CNOTs
-circ.take(pc.H(0))
-circ.take(pc.CNOT(0, 1))
-circ.measure(1) # measure qubit-1 in z-basis
-circ.take(pc.H(1))
-circ.take(pc.CNOT(1, 2))
-circ.take(pc.CNOT(2, 3))
+circ.append(pc.H(0))
+circ.append(pc.CNOT(0, 1))
+circ.append(pc.Measurement(1)) # measure qubit-1 in z-basis
+circ.append(pc.H(1))
+circ.append(pc.CNOT(1, 2))
+circ.append(pc.CNOT(2, 3))
 
 # Initialize the |0000⟩ state
 state = pc.zero_state(N)
