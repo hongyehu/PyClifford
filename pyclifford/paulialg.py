@@ -48,6 +48,11 @@ class Pauli(object):
     def N(self): # number of qubits
         return self.g.shape[0]//2
     
+    def expand(self, N):
+        if N is not None and N > self.N:
+            self.g = numpy.concatenate([self.g, numpy.zeros(2*(N-self.N), dtype=self.g.dtype)])
+        return self
+    
     def __neg__(self):
         return type(self)(self.g, (self.p + 2) % 4)
 
@@ -77,6 +82,10 @@ class Pauli(object):
 
     def __matmul__(self, other):
         if isinstance(other, Pauli):
+            if self.N != other.N:
+                N = max(self.N, other.N)
+                self.expand(N)
+                other.expand(N)
             p = (self.p + other.p + ipow(self.g, other.g)) % 4
             g = (self.g + other.g) % 2
             return Pauli(g, p)
@@ -186,6 +195,11 @@ class PauliList(object):
     @property
     def N(self):
         return self.gs.shape[1]//2
+    
+    def expand(self, N):
+        if N is not None and N > self.N:
+            self.gs = numpy.concatenate([self.gs, numpy.zeros((self.L, 2*(N-self.N)), dtype=self.gs.dtype)], axis=1)
+        return self
 
     def __getitem__(self, item):
         if isinstance(item, (int, numpy.integer)):
@@ -367,7 +381,7 @@ class PauliMonomial(Pauli):
         '''cast the Pauli monomial to a single-term Pauli polynomial'''
         gs = numpy.expand_dims(self.g, 0)
         ps = numpy.array([self.p], dtype=numpy.int_)
-        cs = numpy.array([self.c], dtype=numpy.complex_)
+        cs = numpy.array([self.c], dtype=numpy.complex128)
         return PauliPolynomial(gs, ps).set_cs(cs)
 
     def inverse(self):
@@ -386,7 +400,7 @@ class PauliPolynomial(PauliList):
     cs: comlex (L) - coefficients.'''
     def __init__(self, *args, **kwargs):
         super(PauliPolynomial, self).__init__(*args, **kwargs)
-        self.cs = numpy.ones(self.ps.shape, dtype=numpy.complex_) # default coefficient
+        self.cs = numpy.ones(self.ps.shape, dtype=numpy.complex128) # default coefficient
 
     def __repr__(self):
         txt = ''
@@ -420,6 +434,10 @@ class PauliPolynomial(PauliList):
                 other = other.as_polynomial()
             else: # otherwise assuming other is a number
                 other = other * pauli_identity(self.N)
+        if self.N != other.N:
+            N = max(self.N, other.N)
+            self.expand(N)
+            other.expand(N)
         gs = numpy.concatenate([self.gs, other.gs])
         ps = numpy.concatenate([self.ps, other.ps])
         cs = numpy.concatenate([self.cs, other.cs])
@@ -436,6 +454,10 @@ class PauliPolynomial(PauliList):
             other = other.as_polynomial()
         else:
             raise NotImplementedError('matmul is not implemented for between {} and {}'.format(type(self).__name__, type(other).__name__))
+        if self.N != other.N:
+            N = max(self.N, other.N)
+            self.expand(N)
+            other.expand(N)
         gs, ps, cs = batch_dot(self.gs, self.ps, self.cs, other.gs, other.ps, other.cs)
         return PauliPolynomial(gs, ps).set_cs(cs)
 
@@ -474,13 +496,13 @@ class PauliPolynomial(PauliList):
 # ---- constructors ----
 def pauli(obj, N = None):
     if isinstance(obj, Pauli):
-        return obj
+        return obj.expand(N)
     elif isinstance(obj, (tuple, list, numpy.ndarray)):
         N = len(obj)
         inds = enumerate(obj)
     elif isinstance(obj, dict):
         if N is None:
-            raise ValueError('pauli(inds, N) must specify qubit number N when inds is dict.')
+            N = max(obj.keys()) + 1 if obj else 0
         inds = obj.items()
     elif isinstance(obj, str):
         return pauli(list(obj))
@@ -490,6 +512,7 @@ def pauli(obj, N = None):
     h = 0
     p = 0
     for i, mu in inds:
+        i = int(i)
         assert i-h < N, 'qubit {} is out of bounds for system size {}.'.format(i, N)
         if mu == 0 or mu == 'I':
             continue
@@ -532,6 +555,9 @@ def paulis(*objs, N = None):
             objs = objs[0]
     # otherwise construct data for Pauli operators
     objs = [pauli(obj, N = N) for obj in objs]
+    N = max(obj.N for obj in objs)
+    for obj in objs:
+        obj.expand(N)
     gs = numpy.stack([obj.g for obj in objs])
     ps = numpy.array([obj.p for obj in objs])
     return PauliList(gs, ps)

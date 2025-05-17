@@ -38,6 +38,12 @@ class CliffordMap(PauliList):
             lns2 = [dis.format(xz[i%2], i//2, pauli) for i, pauli in zip(range(self.L-10, self.L), self[-10:])]
             return 'CliffordMap(\n{}\n   ...\n{})'.format('\n'.join(lns1),'\n'.join(lns2)).replace('\n','\n  ')
     
+    def expand(self, N):
+        if N is not None and N > self.N:
+            return identity_map(N).embed(self, mask(range(self.N), N))
+        else:
+            return self
+    
     def copy(self):
         return CliffordMap(self.gs.copy(), self.ps.copy())
 
@@ -65,7 +71,7 @@ class CliffordMap(PauliList):
         '''Returns the inverse of this Clifford map, (such that it composes with
         its inverse results in identity map).'''
         gs_inv = z2inv(self.gs)
-        gs_iden, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
+        _, ps_mis = pauli_combine(gs_inv, self.gs, self.ps)
         ps_inv = (- ps_mis - ps0(gs_inv))%4
         return CliffordMap(gs_inv, ps_inv)
 
@@ -106,6 +112,12 @@ class StabilizerState(PauliList):
     @property
     def stabilizers(self):
         return self[self.r:self.N]
+
+    def expand(self, N):
+        if N is not None and N > self.N:
+            return stabilizer_state(self.stabilizers.expand(N))
+        else:
+            return self
     
     def copy(self):
         return StabilizerState(self.gs.copy(), self.ps.copy(), r=self.r)
