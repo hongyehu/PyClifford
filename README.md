@@ -3,7 +3,7 @@
 [![Unitary Fund](https://img.shields.io/badge/Supported%20By-UNITARY%20FUND-brightgreen.svg?style=for-the-badge)](http://unitary.fund)
 
 
-[![license](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)  [![version](https://img.shields.io/badge/version-0.1.0-green.svg)](https://semver.org)
+[![license](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)  [![version](https://img.shields.io/badge/version-0.1.1-green.svg)](https://semver.org)
 
 # About
 
@@ -44,7 +44,7 @@ source pyclifford-env/bin/activate
 
 Make sure you have the following packages installed:
 ```bash
-pip install numpy matplotlib numba qutip
+pip install numpy matplotlib numba
 ```
 You may also need to install a compatible version of setuptools:
 ```bash
@@ -64,15 +64,21 @@ pip install .
 Open a Python shell and try:
 ```bash
 import pyclifford as pc
+print(pc.__version__)
+```
+
+Suppose the version is >=**v0.1.1** ; then, it is the updated version. See the release notes later for the changes.
+And now try:
+```bash
+import pyclifford as pc
 print(pc.pauli("X"))
 ```
 You should see output corresponding to the Pauli X operator! Congratulations! 🎉
 
-## :fire: New Feature :fire:
+## :fire: New Release (v.0.1.1) :fire:
 
 **We're excited to introduce our latest feature!:** :sparkles: 
 - A new `examples` folder containing step-by-step examples.
-- Generalized stabilizer states that support non-Clifford gates.
 
 ## 🧪 Simple first step: Creating a GHZ State 🧪
 
@@ -83,13 +89,13 @@ import pyclifford as pc
 
 # Create a 4-qubit quantum circuit
 N = 4
-circ = pc.Circuit(N)
+circ = pc.Circuit()
 
 # Apply gates: H on qubit 0, then a chain of CNOTs
-circ.take(pc.H(0))
-circ.take(pc.CNOT(0, 1))
-circ.take(pc.CNOT(1, 2))
-circ.take(pc.CNOT(2, 3))
+circ.append(pc.H(0))
+circ.append(pc.CNOT(0, 1))
+circ.append(pc.CNOT(1, 2))
+circ.append(pc.CNOT(2, 3))
 
 # Initialize the |0000⟩ state
 state = pc.zero_state(N)
@@ -101,6 +107,26 @@ state = circ.forward(state)
 print("State after circuit:", state)
 ```
 
+Or one can simply do
+
+```python
+import pyclifford as pc
+
+# Create a 4-qubit quantum circuit
+N = 4
+circ = pc.Circuit(pc.H(0),pc.CNOT(0, 1),pc.CNOT(1, 2),pc.CNOT(2, 3))
+
+# Initialize the |0000⟩ state
+state = pc.zero_state(N)
+
+# Apply the circuit
+state = circ.forward(state)
+
+# Print the final state
+print("State after circuit:", state)
+```
+
+
 Now, let's do a **mid-circuit** measurement!
 
 ```python
@@ -108,15 +134,15 @@ import pyclifford as pc
 
 # Create a 4-qubit quantum circuit
 N = 4
-circ = pc.Circuit(N)
+circ = pc.Circuit()
 
 # Apply gates: H on qubit 0, then a chain of CNOTs
-circ.take(pc.H(0))
-circ.take(pc.CNOT(0, 1))
-circ.measure(1) # measure qubit-1 in z-basis
-circ.take(pc.H(1))
-circ.take(pc.CNOT(1, 2))
-circ.take(pc.CNOT(2, 3))
+circ.append(pc.H(0))
+circ.append(pc.CNOT(0, 1))
+circ.append(pc.Measurement(1)) # measure qubit-1 in z-basis
+circ.append(pc.H(1))
+circ.append(pc.CNOT(1, 2))
+circ.append(pc.CNOT(2, 3))
 
 # Initialize the |0000⟩ state
 state = pc.zero_state(N)
@@ -153,11 +179,60 @@ In addition, we are interested in developing `PyCliffordExt` as an extension to 
 ## 🧩 Dependence of `PyClifford` 🧩:
 - Numba
 - Numpy
-- QuTip
 - Matplotlib
 ### Dependence of `PyCliffordExt`:
 - Qiskit 0.39.4
 - Pyscf 2.0.1
+
+## Release Note:
+<details>
+<summary><strong>📦 Major Update: v0.1.1 (May 2025)</strong></summary>
+<br>
+🚀 Major Update Summary
+ 
+- Unified circuit architecture to support both unitary and measurement operations, and more flexible circuit class to compose any type of operation.
+- Unified measurement and post-selection framework using `log2` scale for stability.
+- Removed `QuTiP` dependency in favor of pure NumPy implementations.
+- Added caching for measurements and random unitaries to support classical shadows.
+🗂 File-by-File Updates
+<br>
+### `__init__.py`
+
+- Refactored imports and renamed core classes: `Circuit`, `Layer`, `Measurement`.
+- Removed obsolete classes: `CliffordCircuit`, `MeasurementLayer`.
+- Added new gate primitives: `SWAP`, `CZ`, `CX`, `measurement_layer`.
+<br>
+### `utils.py`
+
+- Introduced `stabilizer_postselect`, unified treatment of projection and post-selection with `log2prob`.
+- Removed deprecated methods: `stabilizer_projection_trace`, `stabilizer_postselection`, and `decompose`.
+- Explained the encoder-decoder logic for Pauli decomposition using `.transform_by(state.to_map().inverse())`.
+<br>
+### `paulialg.py`
+
+- Removed `qutip` dependency and replaced with `to_numpy` methods.
+- Vectorized `PauliList.to_numpy` for efficiency.
+- Constructors now accept `**kwargs` to support inheritance.
+<br>
+### `stabilizer.py`
+
+- Fixed `.copy()` issue by improving constructor signature handling `r`.
+- Removed `.set_r()`, now set `r` via constructor or direct assignment.
+- Standardized error handling with Python exceptions.
+- Unified implementation of `.expect()` and `.get_prob()` using `stabilizer_postselect`.
+- Introduced fugacity for reweighting Pauli observable expectations.
+<br>
+### `circuit.py`
+
+- Major refactor of `Circuit` and `Layer` classes to support measurements and flexible composition.
+- Replaced `.take()` with `.append()`.
+- `forward` and `backward` now return `(state, log2prob)` tuple uniformly.
+- Introduced `Measurement` class with cached outcomes, enabling classical shadows via forward/backward structure.
+- Removed `.N` and constructor no longer requires qubit count.
+- Added `.reset()` methods to clear cached values.
+- Random unitary caching in `CliffordGate` to support deterministic inverses in backward pass.
+</details>
+
 
 ## 🔮 What will be in the next release (June-July 2025) 🔮: 
 - Generalized stabilizer states
