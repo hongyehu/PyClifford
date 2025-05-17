@@ -69,8 +69,8 @@ class CliffordGate(object):
         return len(set(self.qubits) & set(other.qubits))==0
 
     def forward(self, obj):
-        '''Apply the gate forward in time. (inplace update) 
-        Forward transformation: O -> U O U^\dagger
+        '''Apply the gate forward in time. (inplace update)
+        Forward transformation: O -> U O U^H
 
         Input:
         obj: Pauli, PauliList, StabilizerState - the object to be transformed
@@ -103,7 +103,7 @@ class CliffordGate(object):
 
     def backward(self, obj):
         '''Apply the gate backward in time. (inplace update)
-        Backward transformation: O -> U^\dagger O U
+        Backward transformation: O -> U^H O U
 
         Input:
         obj: Pauli, PauliList, StabilizerState - the object to be transformed
@@ -195,12 +195,12 @@ class Measurement(object):
     def forward(self, obj):
         '''Implements the measurement (non-deterministic sampling outcome).
         (inplace update)
-        Forward transformation: rho -> M rho M^\dagger / Tr(M rho M^\dagger),
-        where M is sampled with probability Tr(M rho M^\dagger).
+        Forward transformation: rho -> M rho M^H / Tr(M rho M^H),
+        where M is sampled with probability Tr(M rho M^H).
         
         Input:
         obj: StabilizerState - the state to be measured
-             
+        
         Output:
         obj: StabilizerState - the state after measurement
         log2prob: real - log2 probability of the outcome'''
@@ -215,12 +215,12 @@ class Measurement(object):
     def backward(self, obj):
         '''Postselect the measurement outcome (deterministic projection).
         (inplace update)
-        Backward transformation: rho -> M^\dagger rho M / Tr(M^\dagger rho M)
+        Backward transformation: rho -> M^H rho M / Tr(M^H rho M)
         where M is fixed by the measurement outcome generated in the forward pass.
         
         Input:
         obj: StabilizerState - the state to be postselected     
-             
+        
         Output:
         obj: StabilizerState - the state after postselection
         log2prob: real - log2 probability of successful postselection'''

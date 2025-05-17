@@ -169,7 +169,7 @@ def batch_dot(gs1, ps1, cs1, gs2, ps2, cs2):
     (L2, N2) = gs2.shape
     gs = numpy.empty((L1,L2,N2), dtype=numpy.int_)
     ps = numpy.empty((L1,L2), dtype=numpy.int_)
-    cs = numpy.empty((L1,L2), dtype=numpy.complex_)
+    cs = numpy.empty((L1,L2), dtype=numpy.complex128)
     for j1 in range(L1):
         for j2 in range(L2):
             ps[j1,j2] = (ps1[j1] + ps2[j2] + ipow(gs1[j1], gs2[j2]))%4
@@ -247,35 +247,36 @@ def pauli_transform(gs_in, ps_in, gs_map, ps_map):
     return gs_out, ps_out
 
 @njit
-def pauli_decompose(gs_in, ps_in, gs_stb, ps_stb):
-    '''Decompose a Pauli operator into stabilizer and destabilizers.
+def pauli_decompose(gs_in, ps_in, gs_stb, ps_stb, r):
+    '''Decompose Pauli operators into stabilizer and destabilizers.
 
     Parameters:
     gs_in: int (L, 2*N) - Pauli strings in binary representation.
     ps_in: int (L) - phase indicators of Pauli operators.
     gs_stb: int (2*N, 2*N) - stabilizer tableaux in binary representation.
     ps_stb: int (2*N) - phase indicators of (de)stabilizer.
+    r: int - number of standby stabilizer pairs (0:r to be excluded).
 
     Returns:
-    bs_out: int (L, N) - binary encoding of destabilizer decomposition.
-    cs_out: int (L, N) - binary encoding of stabilizer decomposition.
+    bs_out: int (L, N-r) - binary encoding of destabilizer decomposition.
+    cs_out: int (L, N-r) - binary encoding of stabilizer decomposition.
     ps_out: int (L) - phase indicators of decomposed operators.'''
     (L, N2) = gs_in.shape
     N = N2//2
-    bs_out = numpy.zeros((L, N), dtype=numpy.int_)
-    cs_out = numpy.zeros((L, N), dtype=numpy.int_)
+    bs_out = numpy.zeros((L, N-r), dtype=numpy.int_)
+    cs_out = numpy.zeros((L, N-r), dtype=numpy.int_)
     ps_out = ps_in.copy()
     g_tmp = numpy.zeros(N2, dtype=numpy.int_)
     for k in range(L):
         g_tmp.fill(0)
-        for j in range(N):
+        for j in range(r, N):
             if acq(gs_in[k], gs_stb[j]):
-                bs_out[k,j] = 1
+                bs_out[k,j-r] = 1
                 ps_out[k] = ps_out[k] - ps_stb[j+N] - ipow(g_tmp, gs_stb[j+N])
                 g_tmp = (g_tmp + gs_stb[j+N])%2
-        for j in range(N):
+        for j in range(r, N):
             if acq(gs_in[k], gs_stb[j+N]):
-                cs_out[k,j] = 1
+                cs_out[k,j-r] = 1
                 ps_out[k] = ps_out[k] - ps_stb[j] - ipow(g_tmp, gs_stb[j])
                 g_tmp = (g_tmp + gs_stb[j])%2
     return bs_out, cs_out, ps_out%4
@@ -1008,7 +1009,7 @@ def aggregate(data_in, inds, l):
 @njit
 def calculate_chi(chi_old, phi, fusion_map, fusion_p, L_new):
     L_old, L_add = fusion_map.shape
-    chi_new = numpy.zeros((L_new,L_new), dtype=numpy.complex_)
+    chi_new = numpy.zeros((L_new,L_new), dtype=numpy.complex128)
     for i1 in range(L_old):
         for j1 in range(L_add):
             k1 = fusion_map[i1,j1]
